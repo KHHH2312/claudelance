@@ -39,12 +39,12 @@ cd contracts && forge install && forge test
 
 ## Live Sepolia deployment
 
-| Contract | Address |
-|----------|---------|
-| ClaudelanceCore | [`0x8223cB87CfAAB9c1a5e524545C3097df1517191D`](https://celo-sepolia.blockscout.com/address/0x8223cB87CfAAB9c1a5e524545C3097df1517191D) |
-| MockCUSD (stand-in) | [`0x207D662337694796E76a4d5577DC72C93Cd92822`](https://celo-sepolia.blockscout.com/address/0x207D662337694796E76a4d5577DC72C93Cd92822) |
+| Contract | Address | Verified source |
+|----------|---------|-----------------|
+| ClaudelanceCore | [`0x8223cB87CfAAB9c1a5e524545C3097df1517191D`](https://celo-sepolia.blockscout.com/address/0x8223cB87CfAAB9c1a5e524545C3097df1517191D) | [Celoscan](https://sepolia.celoscan.io/address/0x8223cb87cfaab9c1a5e524545c3097df1517191d#code) |
+| MockCUSD (stand-in) | [`0x207D662337694796E76a4d5577DC72C93Cd92822`](https://celo-sepolia.blockscout.com/address/0x207D662337694796E76a4d5577DC72C93Cd92822) | [Celoscan](https://sepolia.celoscan.io/address/0x207d662337694796e76a4d5577dc72c93cd92822#code) |
 
-Full deploy record: `contracts/deployments/celo-sepolia.json`.
+Both contracts verified on Celoscan via Etherscan API V2 (solc 0.8.24, optimizer runs=200, via-ir). Full deploy record: `contracts/deployments/celo-sepolia.json`.
 
 ## Deploying to a new network
 
@@ -60,15 +60,21 @@ forge script script/DeployMockCUSD.s.sol \
 forge script script/Deploy.s.sol \
   --rpc-url celo_sepolia --broadcast --private-key $DEPLOYER_PRIVATE_KEY
 
-# 3. (Once ETHERSCAN_API_KEY is set) post-hoc verify via Etherscan API V2:
-forge verify-contract --chain celo_sepolia <CORE_ADDRESS> \
-  src/ClaudelanceCore.sol:ClaudelanceCore \
-  --etherscan-api-key $ETHERSCAN_API_KEY
+# 3. Verify source on Celoscan via Etherscan API V2 (needs ETHERSCAN_API_KEY):
+forge verify-contract --chain-id 11142220 \
+  --verifier etherscan \
+  --verifier-url "https://api.etherscan.io/v2/api?chainid=11142220" \
+  --etherscan-api-key $ETHERSCAN_API_KEY --watch \
+  <CORE_ADDRESS> src/ClaudelanceCore.sol:ClaudelanceCore \
+  --constructor-args $(cast abi-encode "constructor(address,address,address,address)" \
+    $CUSD_ADDRESS $TREASURY_ADDRESS $CI_RELAYER_ADDRESS $OWNER_ADDRESS)
 ```
 
 The unified Etherscan V2 key works for Celo plus 60+ other EVM chains
 — grab one at <https://etherscan.io/myapikey> and reuse it for the
-mainnet deploy.
+mainnet deploy. (Foundry's built-in chain alias is `celo-sepolia` with
+a dash, distinct from the underscore profile name in `foundry.toml`;
+using `--chain-id <numeric>` avoids the ambiguity.)
 
 For mainnet, skip step 1 and point `CUSD_ADDRESS` at `0x765DE816845861e75A25fCA122bb6898B8B1282a`.
 
