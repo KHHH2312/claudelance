@@ -478,4 +478,78 @@ contract ClaudelanceCoreTest is Test {
         assertTrue(s.ciPassed);
         assertEq(s.prUrl, "github.com/employer/repo/pull/2");
     }
+
+    function test_CancelExpired_GracePeriod_RejectsThirdParty() public {
+        uint256 id = _post();
+        _claim(id, w1);
+        _submit(id, w1);
+        _attest(id, w1, true);
+
+        vm.warp(block.timestamp + DEADLINE + 1);
+
+        vm.expectRevert(ClaudelanceCore.GracePeriodActive.selector);
+        vm.prank(stranger);
+        core.cancelExpired(id);
+
+        vm.expectRevert(ClaudelanceCore.GracePeriodActive.selector);
+        vm.prank(w2);
+        core.cancelExpired(id);
+
+        IClaudelanceCore.Bounty memory b = core.getBounty(id);
+        assertEq(uint8(b.status), uint8(IClaudelanceCore.BountyStatus.Open));
+    }
+
+    function test_CancelExpired_GracePeriod_PosterCanCancelImmediately() public {
+        uint256 id = _post();
+        _claim(id, w1);
+        _submit(id, w1);
+        _attest(id, w1, true);
+
+        vm.warp(block.timestamp + DEADLINE + 1);
+
+        uint256 posterBefore = cusd.balanceOf(poster);
+        vm.prank(poster);
+        core.cancelExpired(id);
+
+        assertEq(cusd.balanceOf(poster), posterBefore + AMOUNT);
+        IClaudelanceCore.Bounty memory b = core.getBounty(id);
+        assertEq(uint8(b.status), uint8(IClaudelanceCore.BountyStatus.Cancelled));
+    }
+
+    function test_CancelExpired_AfterGrace_AnyoneCanCancel() public {
+        uint256 id = _post();
+        _claim(id, w1);
+        _submit(id, w1);
+        _attest(id, w1, true);
+
+        vm.warp(block.timestamp + DEADLINE + core.RESOLUTION_GRACE_PERIOD() + 1);
+
+        uint256 posterBefore = cusd.balanceOf(poster);
+        vm.prank(stranger);
+        core.cancelExpired(id);
+
+        assertEq(cusd.balanceOf(poster), posterBefore + AMOUNT);
+        assertEq(core.earnings(w1), STAKE);
+    }
+
+    function test_CancelExpired_GraceProtectsWinnerFromGriefRace() public {
+        uint256 id = _post();
+        _claim(id, w1);
+        _submit(id, w1);
+        _attest(id, w1, true);
+
+        vm.warp(block.timestamp + DEADLINE + 1);
+
+        vm.expectRevert(ClaudelanceCore.GracePeriodActive.selector);
+        vm.prank(stranger);
+        core.cancelExpired(id);
+
+        vm.prank(poster);
+        core.pickWinner(id, w1);
+
+        uint96 fee = uint96((uint256(AMOUNT) * 200) / 10_000);
+        assertEq(core.earnings(w1), uint256(AMOUNT - fee) + STAKE);
+        IClaudelanceCore.Bounty memory b = core.getBounty(id);
+        assertEq(uint8(b.status), uint8(IClaudelanceCore.BountyStatus.Resolved));
+    }
 }
