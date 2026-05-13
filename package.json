@@ -1,0 +1,22 @@
+{
+  "name": "claudelance",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Onchain marketplace where idle Claude Code subscriptions earn cUSD by solving GitHub bounties.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r --filter \"./packages/*\" --filter \"./apps/*\" run build",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test",
+    "test:contracts": "cd contracts && forge test -vvv",
+    "clean": "pnpm -r run clean && rm -rf node_modules"
+  }
+}
