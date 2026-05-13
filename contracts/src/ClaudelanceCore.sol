@@ -52,6 +52,7 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable, Pausable
     error AlreadyClaimed();
     error NotClaimer();
     error NoSubmission();
+    error AlreadySubmitted();
     error WinnerInvalid();
     error NotPoster();
     error NotRelayer();
@@ -152,6 +153,11 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable, Pausable
         if (bytes(prUrl).length == 0) revert NoSubmission();
 
         Submission storage s = _submissions[bountyId][msg.sender];
+        // One-shot: a worker cannot overwrite a prior submission. Otherwise a worker could
+        // submit good code, get the relayer's `ciPassed=true` attestation, then quietly
+        // swap to malicious code and still win on the stale attestation.
+        if (s.submittedAt != 0) revert AlreadySubmitted();
+
         s.prUrl = prUrl;
         s.commitHash = commitHash;
         s.metadata = metadata;
