@@ -680,6 +680,34 @@ contract ClaudelanceCoreTest is Test {
         core.pickWinner(id, w1);
     }
 
+    function testFuzz_PickWinner_FeeMathIsConsistent(uint96 amount) public {
+        amount = uint96(bound(uint256(amount), uint256(core.MIN_BOUNTY()), type(uint96).max));
+
+        cusd.mint(poster, amount);
+        vm.prank(poster);
+        cusd.approve(address(core), type(uint256).max);
+
+        vm.prank(poster);
+        uint256 id = core.postBounty(
+            0, "github.com/x/y", "github.com/x/y/issues/1", bytes32(0), amount, 1, 0, DEADLINE, false
+        );
+        _claim(id, w1);
+        vm.prank(w1);
+        core.submitPR(id, "github.com/x/y/pull/1", bytes32(uint256(0xabc)), "");
+
+        uint256 treasuryBefore = cusd.balanceOf(treasury);
+
+        vm.prank(poster);
+        core.pickWinner(id, w1);
+
+        uint256 fee = (uint256(amount) * core.PROTOCOL_FEE_BPS()) / core.BPS_DENOMINATOR();
+        uint256 payout = uint256(amount) - fee;
+
+        assertEq(payout + fee, uint256(amount), "payout + fee must equal amount");
+        assertEq(cusd.balanceOf(treasury), treasuryBefore + fee, "treasury fee credited");
+        assertEq(core.earnings(w1), payout, "winner earnings = payout (no stake in this fuzz)");
+    }
+
     function test_Events_WithdrawalAndCancelEmit() public {
         uint256 id = _post();
         _claim(id, w1);
