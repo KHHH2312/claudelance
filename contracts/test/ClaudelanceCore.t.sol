@@ -587,4 +587,41 @@ contract ClaudelanceCoreTest is Test {
         core.setCIRelayer(address(0));
         vm.stopPrank();
     }
+
+    function test_RescueERC20_TransfersStrayTokenAndEmits() public {
+        MockCUSD other = new MockCUSD();
+        other.mint(address(core), 7e18);
+        address rescueTo = makeAddr("rescueTo");
+
+        vm.expectEmit(true, true, false, true);
+        emit IClaudelanceCore.ERC20Rescued(address(other), rescueTo, 7e18);
+
+        vm.prank(owner);
+        core.rescueERC20(IERC20(address(other)), rescueTo, 7e18);
+
+        assertEq(other.balanceOf(rescueTo), 7e18);
+        assertEq(other.balanceOf(address(core)), 0);
+    }
+
+    function test_RescueERC20_RejectsCUSD() public {
+        vm.prank(owner);
+        vm.expectRevert(ClaudelanceCore.CannotRescueCUSD.selector);
+        core.rescueERC20(IERC20(address(cusd)), owner, 1);
+    }
+
+    function test_RescueERC20_RejectsZeroRecipient() public {
+        MockCUSD other = new MockCUSD();
+        other.mint(address(core), 1);
+        vm.prank(owner);
+        vm.expectRevert(ClaudelanceCore.InvalidAddress.selector);
+        core.rescueERC20(IERC20(address(other)), address(0), 1);
+    }
+
+    function test_RescueERC20_OnlyOwner() public {
+        MockCUSD other = new MockCUSD();
+        other.mint(address(core), 1);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, stranger));
+        vm.prank(stranger);
+        core.rescueERC20(IERC20(address(other)), stranger, 1);
+    }
 }
