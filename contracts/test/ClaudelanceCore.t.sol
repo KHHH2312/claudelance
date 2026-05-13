@@ -335,7 +335,7 @@ contract ClaudelanceCoreTest is Test {
         vm.expectRevert(ClaudelanceCore.BountyNotExpired.selector);
         core.cancelExpired(id);
 
-        vm.warp(block.timestamp + DEADLINE + 1);
+        vm.warp(block.timestamp + DEADLINE + core.RESOLUTION_GRACE_PERIOD() + 1);
         uint256 posterBefore = cusd.balanceOf(poster);
         uint256 treasuryBefore = cusd.balanceOf(treasury);
 
