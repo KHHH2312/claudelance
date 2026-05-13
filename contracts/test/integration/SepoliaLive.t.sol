@@ -7,6 +7,9 @@ import { stdJson } from "forge-std/StdJson.sol";
 import { ClaudelanceCore } from "../../src/ClaudelanceCore.sol";
 import { IClaudelanceCore } from "../../src/interfaces/IClaudelanceCore.sol";
 import { MockCUSD } from "../../src/mocks/MockCUSD.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title  SepoliaLiveTest
 /// @notice Integration suite that forks Celo Sepolia and exercises the live
@@ -462,5 +465,137 @@ contract SepoliaLiveTest is Test {
         vm.expectRevert(ClaudelanceCore.NothingToWithdraw.selector);
         vm.prank(w1);
         core.withdrawEarnings();
+    }
+
+    // -----------------------------------------------------------------------
+    //                       Admin + pause + rescue
+    // -----------------------------------------------------------------------
+
+    function test_Live_AdminSetters_OnlyOwnerAndEmit() public {
+        address newT = makeAddr("fork-treasury-2");
+        address newR = makeAddr("fork-relayer-2");
+
+        // Non-owner cannot set.
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, stranger));
+        vm.prank(stranger);
+        core.setTreasury(newT);
+
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, stranger));
+        vm.prank(stranger);
+        core.setCIRelayer(newR);
+
+        // Zero address rejected even from the owner.
+        vm.expectRevert(ClaudelanceCore.InvalidAddress.selector);
+        vm.prank(liveOwner);
+        core.setTreasury(address(0));
+
+        vm.expectRevert(ClaudelanceCore.InvalidAddress.selector);
+        vm.prank(liveOwner);
+        core.setCIRelayer(address(0));
+
+        // Happy path: events fire with (previous, current).
+        vm.expectEmit(true, true, false, false);
+        emit IClaudelanceCore.TreasuryUpdated(liveTreasury, newT);
+        vm.prank(liveOwner);
+        core.setTreasury(newT);
+        assertEq(core.treasury(), newT);
+
+        vm.expectEmit(true, true, false, false);
+        emit IClaudelanceCore.CIRelayerUpdated(liveRelayer, newR);
+        vm.prank(liveOwner);
+        core.setCIRelayer(newR);
+        assertEq(core.ciRelayer(), newR);
+    }
+
+    function test_Live_Pause_BlocksWritesButAllowsResolution() public {
+        // Seed an in-flight bounty before pausing.
+        uint256 id = _post();
+        _claim(id, w1);
+        _submit(id, w1, "github.com/yeheskieltame/claudelance-sandbox/pull/PAUSE");
+        _attest(id, w1, true);
+
+        vm.prank(liveOwner);
+        core.pause();
+
+        // postBounty blocked.
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(poster);
+        core.postBounty(
+            0, "github.com/x/y", "github.com/x/y/issues/1", bytes32(0),
+            AMOUNT, SLOTS, STAKE, DEADLINE, true
+        );
+
+        // claimSlot blocked.
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(w2);
+        core.claimSlot(id);
+
+        // submitPR blocked (w2 is not a claimer but pause is checked first
+        // by whenNotPaused; using w1 — already submitted, but submitPR also
+        // has the whenNotPaused modifier and would revert there).
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(w1);
+        core.submitPR(id, "github.com/x/y/pull/late", bytes32(0), "");
+
+        // pickWinner still works while paused (intentional — lets in-flight
+        // bounties resolve).
+        vm.prank(poster);
+        core.pickWinner(id, w1);
+        IClaudelanceCore.Bounty memory b = core.getBounty(id);
+        assertEq(uint8(b.status), uint8(IClaudelanceCore.BountyStatus.Resolved));
+
+        // withdrawEarnings still works while paused.
+        vm.prank(w1);
+        core.withdrawEarnings();
+
+        // Unpause restores postBounty.
+        vm.prank(liveOwner);
+        core.unpause();
+        vm.prank(poster);
+        core.postBounty(
+            0, "github.com/x/y", "github.com/x/y/issues/2", bytes32(0),
+            AMOUNT, SLOTS, STAKE, DEADLINE, true
+        );
+    }
+
+    function test_Live_Pause_OnlyOwner() public {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, stranger));
+        vm.prank(stranger);
+        core.pause();
+
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, stranger));
+        vm.prank(stranger);
+        core.unpause();
+    }
+
+    function test_Live_RescueERC20_FullFlow() public {
+        // Deploy a foreign ERC20 and mint some to the deployed core.
+        MockCUSD foreign = new MockCUSD();
+        foreign.mint(coreAddr, 42e18);
+        address rescueTo = makeAddr("fork-rescue-recipient");
+
+        // Non-owner blocked.
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, stranger));
+        vm.prank(stranger);
+        core.rescueERC20(IERC20(address(foreign)), rescueTo, 1);
+
+        // Zero recipient rejected.
+        vm.prank(liveOwner);
+        vm.expectRevert(ClaudelanceCore.InvalidAddress.selector);
+        core.rescueERC20(IERC20(address(foreign)), address(0), 1);
+
+        // Real cUSD rejected.
+        vm.prank(liveOwner);
+        vm.expectRevert(ClaudelanceCore.CannotRescueCUSD.selector);
+        core.rescueERC20(IERC20(cusdAddr), rescueTo, 1);
+
+        // Happy path: rescue forwards balance and emits.
+        vm.expectEmit(true, true, false, true);
+        emit IClaudelanceCore.ERC20Rescued(address(foreign), rescueTo, 42e18);
+        vm.prank(liveOwner);
+        core.rescueERC20(IERC20(address(foreign)), rescueTo, 42e18);
+
+        assertEq(foreign.balanceOf(rescueTo), 42e18);
+        assertEq(foreign.balanceOf(coreAddr), 0);
     }
 }
