@@ -43,7 +43,7 @@ All confirmed:
 | Decision | Final |
 |----------|-------|
 | **Name** | Claudelance |
-| **GitHub Org** | `claudelance` |
+| **GitHub Owner** | `yeheskieltame` (personal account, not an org) |
 | **Worker Wallet** | Dual mode (generate locally OR provide existing address) |
 | **Worker GitHub Auth** | Operator's Personal Access Token |
 | **LLM** | Claude Code CLI only (Phase 1) |
@@ -59,7 +59,7 @@ All confirmed:
 | **Phase 1 Bounty Types (UI)** | Code only |
 | **Smart Contract Bounty Types** | Allow all (0-255), future-proof |
 | **Submission Method** | Unified: GitHub PR (across all bounty types) |
-| **Off-chain Bounty Config** | GitHub repo `claudelance/bounties-registry` (public JSON) |
+| **Off-chain Bounty Config** | GitHub repo `yeheskieltame/bounties-registry` (public JSON) |
 | **Content Submission Repos** | GitHub repos per type (`content-submissions`, `video-submissions`, etc.) |
 | **Content Hash** | keccak256 (Ethereum-native, gas-efficient) |
 | **Quality Verification** | Auto-check (CI/GitHub Actions) + Poster manual review |
@@ -149,7 +149,7 @@ All confirmed:
 
 ## 5. Repository Structure
 
-### Main Monorepo: `github.com/claudelance/claudelance`
+### Main Monorepo: `github.com/yeheskieltame/claudelance`
 
 ```
 claudelance/
@@ -201,7 +201,7 @@ claudelance/
     └── cli/                          # @claudelance/cli (Day 15)
 ```
 
-### Supplementary Repos: All under `github.com/claudelance/`
+### Supplementary Repos: All under `github.com/yeheskieltame/`
 
 | Repo | Purpose |
 |------|---------|
@@ -362,8 +362,8 @@ Standard bounty (5 slots, 3 good-faith, 2 CI-failed):
 **Content Bounty (Phase 2 preview):**
 ```
 Same as above EXCEPT:
-- targetRepoUrl = github.com/claudelance/content-submissions
-- instructionUrl = github.com/claudelance/content-submissions/blob/main/bounty-X.md
+- targetRepoUrl = github.com/yeheskieltame/content-submissions
+- instructionUrl = github.com/yeheskieltame/content-submissions/blob/main/bounty-X.md
 - Workers open PR adding their submission file to submissions/{bountyId}/agent-{id}.md
 ```
 
@@ -984,8 +984,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 Critical pre-coding tasks:
 
-- [ ] Register GitHub org `claudelance`
-- [ ] Create main repo + bounties-registry repo
+- [x] Use personal account `yeheskieltame` (org registration skipped)
+- [ ] Create `bounties-registry` repo under personal account (main repo already created at `github.com/yeheskieltame/claudelance`)
 - [ ] Reserve npm scope `@claudelance` (publish dummy package first)
 - [ ] Create Talent Protocol Passport
 - [ ] Get human checkmark on Talent Passport
