@@ -217,4 +217,97 @@ contract SepoliaLiveTest is Test {
         assertEq(posters, core.uniquePosterCount());
         assertEq(workers, core.uniqueWorkerCount());
     }
+
+    // -----------------------------------------------------------------------
+    //                       Revert-path coverage
+    // -----------------------------------------------------------------------
+
+    function test_Live_PostBounty_RejectsInvalidParams() public {
+        vm.startPrank(poster);
+
+        vm.expectRevert(ClaudelanceCore.InvalidAmount.selector);
+        core.postBounty(0, "x", "x", bytes32(0), 0.1e18, SLOTS, STAKE, DEADLINE, true);
+
+        vm.expectRevert(ClaudelanceCore.InvalidSlots.selector);
+        core.postBounty(0, "x", "x", bytes32(0), AMOUNT, 0, STAKE, DEADLINE, true);
+
+        vm.expectRevert(ClaudelanceCore.InvalidSlots.selector);
+        core.postBounty(0, "x", "x", bytes32(0), AMOUNT, 21, STAKE, DEADLINE, true);
+
+        vm.expectRevert(ClaudelanceCore.InvalidDeadline.selector);
+        core.postBounty(0, "x", "x", bytes32(0), AMOUNT, SLOTS, STAKE, 1 hours, true);
+
+        vm.expectRevert(ClaudelanceCore.InvalidDeadline.selector);
+        core.postBounty(0, "x", "x", bytes32(0), AMOUNT, SLOTS, STAKE, 30 days, true);
+
+        vm.expectRevert(ClaudelanceCore.InvalidAddress.selector);
+        core.postBounty(0, "", "x", bytes32(0), AMOUNT, SLOTS, STAKE, DEADLINE, true);
+
+        vm.stopPrank();
+    }
+
+    function test_Live_ClaimSlot_RejectsDoubleClaimSlotsFullDeadline() public {
+        uint256 id = _post();
+
+        _claim(id, w1);
+
+        vm.expectRevert(ClaudelanceCore.AlreadyClaimed.selector);
+        vm.prank(w1);
+        core.claimSlot(id);
+
+        address[5] memory extra = [
+            makeAddr("fork-extra-1"),
+            makeAddr("fork-extra-2"),
+            makeAddr("fork-extra-3"),
+            makeAddr("fork-extra-4"),
+            makeAddr("fork-extra-5")
+        ];
+        for (uint256 i = 0; i < extra.length; i++) {
+            cusd.mint(extra[i], STAKE);
+            vm.prank(extra[i]);
+            cusd.approve(coreAddr, STAKE);
+            if (i + 1 + 1 <= SLOTS) {
+                // SLOTS = 5, slot 1 already taken by w1; fill 2..5
+                vm.prank(extra[i]);
+                core.claimSlot(id);
+            } else {
+                vm.expectRevert(ClaudelanceCore.SlotsFull.selector);
+                vm.prank(extra[i]);
+                core.claimSlot(id);
+            }
+        }
+
+        vm.warp(block.timestamp + DEADLINE + 1);
+        address late = makeAddr("fork-late");
+        cusd.mint(late, STAKE);
+        vm.prank(late);
+        cusd.approve(coreAddr, STAKE);
+        vm.expectRevert(ClaudelanceCore.DeadlinePassed.selector);
+        vm.prank(late);
+        core.claimSlot(id);
+    }
+
+    function test_Live_SubmitPR_RejectsBadInputAndState() public {
+        uint256 id = _post();
+
+        // Non-claimer cannot submit.
+        vm.expectRevert(ClaudelanceCore.NotClaimer.selector);
+        vm.prank(stranger);
+        core.submitPR(id, "github.com/whatever/pull/1", bytes32(uint256(1)), "");
+
+        _claim(id, w1);
+
+        // Empty PR URL rejected.
+        vm.expectRevert(ClaudelanceCore.NoSubmission.selector);
+        vm.prank(w1);
+        core.submitPR(id, "", bytes32(uint256(1)), "");
+
+        _submit(id, w1, "github.com/yeheskieltame/claudelance-sandbox/pull/V1");
+
+        // After deadline, even a fresh claimer cannot submit.
+        vm.warp(block.timestamp + DEADLINE + 1);
+        vm.expectRevert(ClaudelanceCore.DeadlinePassed.selector);
+        vm.prank(w2);
+        core.submitPR(id, "github.com/whatever/pull/2", bytes32(uint256(2)), "");
+    }
 }
