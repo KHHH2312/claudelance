@@ -9,8 +9,21 @@
   "owner": "0x987e2ed458ddAF6f900362F94558378056dCc226",
   "deployedAt": 1778702529,
   "deployer": "0x987e2ed458ddAF6f900362F94558378056dCc226",
+  "verification": {
+    "verifier": "Etherscan API V2",
+    "verifiedAt": 1778704800,
+    "compiler": "v0.8.24+commit.e11b9ed9",
+    "optimizer": { "enabled": true, "runs": 200 },
+    "viaIR": true
+  },
   "explorer": {
-    "core": "https://celo-sepolia.blockscout.com/address/0x8223cB87CfAAB9c1a5e524545C3097df1517191D",
-    "cUSD": "https://celo-sepolia.blockscout.com/address/0x207D662337694796E76a4d5577DC72C93Cd92822"
+    "core": {
+      "blockscout": "https://celo-sepolia.blockscout.com/address/0x8223cB87CfAAB9c1a5e524545C3097df1517191D",
+      "celoscan": "https://sepolia.celoscan.io/address/0x8223cb87cfaab9c1a5e524545c3097df1517191d#code"
+    },
+    "cUSD": {
+      "blockscout": "https://celo-sepolia.blockscout.com/address/0x207D662337694796E76a4d5577DC72C93Cd92822",
+      "celoscan": "https://sepolia.celoscan.io/address/0x207d662337694796e76a4d5577dc72c93cd92822#code"
+    }
   }
 }
