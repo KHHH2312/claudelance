@@ -624,4 +624,81 @@ contract ClaudelanceCoreTest is Test {
         vm.prank(stranger);
         core.rescueERC20(IERC20(address(other)), stranger, 1);
     }
+
+    function test_Events_PostBountyEmitsExpectedFields() public {
+        bytes32 reqHash = keccak256("hash");
+        vm.expectEmit(true, true, false, true);
+        emit IClaudelanceCore.BountyPosted(1, poster, 0, AMOUNT, MAX_SLOTS, "github.com/employer/repo", reqHash);
+
+        vm.prank(poster);
+        core.postBounty(
+            0, "github.com/employer/repo", "github.com/employer/repo/issues/1", reqHash,
+            AMOUNT, MAX_SLOTS, STAKE, DEADLINE, true
+        );
+    }
+
+    function test_Events_SlotClaimedEmitted() public {
+        uint256 id = _post();
+        vm.expectEmit(true, true, false, false);
+        emit IClaudelanceCore.SlotClaimed(id, w1);
+        vm.prank(w1);
+        core.claimSlot(id);
+    }
+
+    function test_Events_PRSubmittedAndCIAttestedEmit() public {
+        uint256 id = _post();
+        _claim(id, w1);
+
+        vm.expectEmit(true, true, false, true);
+        emit IClaudelanceCore.PRSubmitted(id, w1, "github.com/employer/repo/pull/2", bytes32(uint256(0xabc)));
+        vm.prank(w1);
+        core.submitPR(id, "github.com/employer/repo/pull/2", bytes32(uint256(0xabc)), "{}");
+
+        vm.expectEmit(true, true, false, true);
+        emit IClaudelanceCore.CIAttested(id, w1, true);
+        vm.prank(relayer);
+        core.attestCI(id, w1, true);
+    }
+
+    function test_Events_PickWinnerEmitsResolutionAndRevenue() public {
+        uint256 id = _post();
+        _claim(id, w1);
+        _submit(id, w1);
+        _attest(id, w1, true);
+
+        uint96 fee = uint96((uint256(AMOUNT) * 200) / 10_000);
+        uint96 payout = AMOUNT - fee;
+
+        vm.expectEmit(true, true, false, true);
+        emit IClaudelanceCore.BountyResolved(id, w1, payout, fee);
+        vm.expectEmit(false, false, false, true);
+        emit IClaudelanceCore.ProtocolRevenueAccrued(fee, fee);
+        vm.expectEmit(true, true, false, true);
+        emit IClaudelanceCore.StakeRefunded(id, w1, STAKE);
+
+        vm.prank(poster);
+        core.pickWinner(id, w1);
+    }
+
+    function test_Events_WithdrawalAndCancelEmit() public {
+        uint256 id = _post();
+        _claim(id, w1);
+        _submit(id, w1);
+        _attest(id, w1, true);
+        vm.prank(poster);
+        core.pickWinner(id, w1);
+
+        uint256 owed = core.earnings(w1);
+        vm.expectEmit(true, false, false, true);
+        emit IClaudelanceCore.EarningsWithdrawn(w1, owed);
+        vm.prank(w1);
+        core.withdrawEarnings();
+
+        uint256 id2 = _post();
+        vm.warp(block.timestamp + DEADLINE + 1);
+        vm.expectEmit(true, true, false, true);
+        emit IClaudelanceCore.BountyCancelled(id2, poster, AMOUNT);
+        vm.prank(poster);
+        core.cancelExpired(id2);
+    }
 }
