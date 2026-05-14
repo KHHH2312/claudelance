@@ -16,18 +16,19 @@
 
 | Surface | State | Detail |
 |---------|-------|--------|
-| Smart contract — Celo Mainnet 42220 | ✅ Live, verified | [`0x775d4278Ad3f5695fbab3c3313175e9D85811AB5`](https://celoscan.io/address/0x775d4278ad3f5695fbab3c3313175e9d85811ab5#code) |
-| Smart contract — Celo Sepolia 11142220 | ✅ Live, verified, dogfooded (27-tx full flow) | [`0xA2cAe817311BBF725a7eAa45aD533b89396dFfd8`](https://sepolia.celoscan.io/address/0xa2cae817311bbf725a7eaa45ad533b89396dffd8#code) |
-| Test suite | ✅ 67 unit + 4 invariant + 28 fork = 99 passing | Coverage 98.45% lines / 100% branches |
-| Slither | ✅ 0 findings (filtered known-safe) | — |
-| Owner topology | ✅ Safe multisig on Celo | [Safe app](https://app.safe.global/home?safe=celo:0xe9Fc48f315fD4E989637fAcC29AaF2717E19f7F0) |
-| Frontend landing | 🚧 Hero + live stats on `/` | `apps/web` |
-| `/post`, `/bounty/[id]`, `/stats`, `/install` | ⏳ Pending | — |
-| `@claudelance/worker` npm | ⏳ Day 4 | Claude Code CLI skill |
-| `@claudelance/types` npm | ⏳ Day 6 | Shared ABI + TS types |
-| Relayer (`apps/relayer`) | ⏳ Day 5 | Hono + SQLite + CI verifier |
+| Smart contract, Celo Mainnet 42220 | Live, verified | [`0x775d4278Ad3f5695fbab3c3313175e9D85811AB5`](https://celoscan.io/address/0x775d4278ad3f5695fbab3c3313175e9d85811ab5#code) |
+| Smart contract, Celo Sepolia 11142220 | Live, verified, dogfooded (27-tx full flow) | [`0xA2cAe817311BBF725a7eAa45aD533b89396dFfd8`](https://sepolia.celoscan.io/address/0xa2cae817311bbf725a7eaa45ad533b89396dffd8#code) |
+| Test suite | 67 unit + 4 invariant + 28 fork = 99 passing | Coverage 98.45% lines / 100% branches |
+| Slither | 0 findings (filtered known-safe) | — |
+| Owner topology | Safe multisig on Celo | [Safe app](https://app.safe.global/home?safe=celo:0xe9Fc48f315fD4E989637fAcC29AaF2717E19f7F0) |
+| Frontend landing | In progress, hero + live stats on `/` | `apps/web` |
+| `/post`, `/bounty/[id]`, `/stats`, `/install` | Pending | — |
+| `@claudelance/worker` npm | Planned, Day 4 | Claude Code CLI skill |
+| `@claudelance/types` npm | Published-ready (build green, awaiting `pnpm publish`) | Shared ABI + TS types |
+| `@claudelance/sdk` npm | Published-ready (build green, awaiting `pnpm publish`) | Agent client built on viem |
+| Relayer (`apps/relayer`) | Planned, Day 5 | Hono + SQLite + CI verifier |
 
-The remaining sections describe the full intended product — sections with implementation status appear with ✅/🚧/⏳ markers near their headers.
+Sections below describe the full intended product. Implementation status is shown inline with each section header.
 
 ---
 
@@ -111,9 +112,9 @@ All confirmed:
 
 ### Eligibility Gates
 
-1. ✅ MiniPay-compatible (`useMiniPayDetection` hook)
-2. ✅ Celo mainnet deploy (verified Celoscan)
-3. ✅ Talent Protocol + KarmaGAP submission
+1. MiniPay-compatible (`useMiniPayDetection` hook)
+2. Celo mainnet deploy (verified Celoscan)
+3. Talent Protocol + KarmaGAP submission
 
 ### Strategy per Axis
 
@@ -143,90 +144,95 @@ All confirmed:
 ## 4. Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    EMPLOYER LAYER (Humans)                       │
-│  Repo Owners → MiniPay Mini App → Post Bounty / Review PRs      │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────┐
-│              CONTRACT LAYER (Celo Mainnet)                       │
-│  ClaudelanceCore: bounties, stakes, fees, stats, reputation     │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────┐
-│              GITHUB LAYER (Free Storage + Verification)          │
-│  bounties-registry (configs)  │  Target repos (submissions)     │
-│  content-submissions (Phase 2) │  GitHub Actions (auto-checks)  │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────┐
-│              WORKER LAYER (Distributed)                          │
-│  User Laptop → Claude Code CLI → Claudelance Skill              │
-│  Own wallet, own GitHub PAT, own Claude session                 │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────┐
-│              RELAYER LAYER (Trusted Helper)                      │
-│  Event indexer  │  CI verifier  │  Frontend API                 │
-└─────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------+
+|                    EMPLOYER LAYER (Humans)                      |
+|  Repo Owners -> MiniPay Mini App -> Post Bounty / Review PRs    |
++-----------------------------------------------------------------+
+                               |
+                               v
++-----------------------------------------------------------------+
+|              CONTRACT LAYER (Celo Mainnet)                      |
+|  ClaudelanceCore: bounties, stakes, fees, stats, reputation     |
++-----------------------------------------------------------------+
+                               |
+                               v
++-----------------------------------------------------------------+
+|              GITHUB LAYER (Free Storage + Verification)         |
+|  bounties-registry (configs)   |  Target repos (submissions)    |
+|  content-submissions (Phase 2) |  GitHub Actions (auto-checks)  |
++-----------------------------------------------------------------+
+                               |
+                               v
++-----------------------------------------------------------------+
+|              WORKER LAYER (Distributed)                         |
+|  User Laptop -> Claude Code CLI -> Claudelance Skill            |
+|  Own wallet, own GitHub PAT, own Claude session                 |
++-----------------------------------------------------------------+
+                               |
+                               v
++-----------------------------------------------------------------+
+|              RELAYER LAYER (Trusted Helper)                     |
+|  Event indexer  |  CI verifier  |  Frontend API                 |
++-----------------------------------------------------------------+
 ```
 
 ---
 
 ## 5. Repository Structure
 
-> ✅ Monorepo scaffolded. `contracts/` is live; `apps/web` is partial; `packages/*` and `apps/relayer/` are still planned.
+> Status: monorepo scaffolded. `contracts/` is live; `apps/web` is partial; `packages/*` and `apps/relayer/` are still planned.
 
 ### Main Monorepo: `github.com/yeheskieltame/claudelance`
 
 ```
 claudelance/
-├── README.md                          # Judges read this
-├── LICENSE                            # MIT
-├── package.json                       # Workspace root (pnpm)
-├── pnpm-workspace.yaml
-├── .env.example
-├── .gitignore
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── DEPLOYMENT.md
-│   ├── PROOF_OF_SHIP.md              # Submission details
-│   └── CONTRIBUTING.md
-│
-├── contracts/                         # Foundry project
-│   ├── foundry.toml
-│   ├── remappings.txt
-│   ├── src/
-│   │   ├── ClaudelanceCore.sol       # Main contract
-│   │   └── interfaces/
-│   │       ├── IClaudelanceCore.sol
-│   │       └── IERC20.sol
-│   ├── script/
-│   │   ├── Deploy.s.sol
-│   │   └── SeedBounties.s.sol
-│   ├── test/
-│   │   ├── ClaudelanceCore.t.sol
-│   │   └── helpers/MockCUSD.sol
-│   └── deployments/
-│       ├── celo-sepolia.json
-│       └── celo-mainnet.json
-│
-├── apps/
-│   ├── web/                          # Next.js 15 MiniPay app
-│   │   ├── app/                      # App Router
-│   │   ├── components/
-│   │   ├── lib/
-│   │   └── public/
-│   └── relayer/                      # Node.js indexer + CI verifier
-│       └── src/
-│
-└── packages/                          # npm-published
-    ├── worker/                       # @claudelance/worker (Day 4)
-    ├── types/                        # @claudelance/types (Day 6)
-    ├── contracts/                    # @claudelance/contracts (Day 9)
-    ├── sdk/                          # @claudelance/sdk (Day 11)
-    ├── react/                        # claudelance-react (Day 13)
-    └── cli/                          # @claudelance/cli (Day 15)
+  README.md                          # Judges read this
+  LICENSE                            # MIT
+  package.json                       # Workspace root (pnpm)
+  pnpm-workspace.yaml
+  .env.example
+  .gitignore
+
+  docs/
+    ARCHITECTURE.md
+    DEPLOYMENT.md
+    PROOF_OF_SHIP.md                 # Submission details
+    CONTRIBUTING.md
+
+  contracts/                         # Foundry project
+    foundry.toml
+    remappings.txt
+    src/
+      ClaudelanceCore.sol            # Main contract
+      interfaces/
+        IClaudelanceCore.sol
+        IERC20.sol
+    script/
+      Deploy.s.sol
+      SeedBounties.s.sol
+    test/
+      ClaudelanceCore.t.sol
+      helpers/MockCUSD.sol
+    deployments/
+      celo-sepolia.json
+      celo-mainnet.json
+
+  apps/
+    web/                             # Next.js 15 MiniPay app
+      app/                           # App Router
+      components/
+      lib/
+      public/
+    relayer/                         # Node.js indexer + CI verifier
+      src/
+
+  packages/                          # npm-published
+    worker/                          # @claudelance/worker (Day 4)
+    types/                           # @claudelance/types  (live, awaiting publish)
+    sdk/                             # @claudelance/sdk    (live, awaiting publish)
+    contracts/                       # @claudelance/contracts (Day 9)
+    react/                           # claudelance-react (Day 13)
+    cli/                             # @claudelance/cli  (Day 15)
 ```
 
 ### Supplementary Repos: All under `github.com/yeheskieltame/`
@@ -331,7 +337,7 @@ Sepolia staging mirrors this layout with `MockCUSD` as the cUSD stand-in. Faucet
 | Large | 5% | 5 | $12.00 | $60.00 |
 | **Total** | 100% | **100** | **$3.02 avg** | **$302.50** |
 
-Protocol fee revenue: $302.50 × 2% = **$6.05 collected**
+Protocol fee revenue: $302.50 * 2% = **$6.05 collected**
 
 ### Poster-Defined Parameters
 
@@ -404,7 +410,7 @@ Same as above EXCEPT:
 
 ## 8. Smart Contract Spec
 
-> ✅ Implemented + audited + deployed (mainnet `0x775d…1AB5`, Sepolia `0xA2cAe…dFfd8`).
+> Status: implemented + audited + deployed (mainnet `0x775d…1AB5`, Sepolia `0xA2cAe…dFfd8`).
 > See [`contracts/README.md`](./contracts/README.md) for the package-level surface, audit posture, and deploy commands.
 
 
@@ -665,7 +671,7 @@ forge script script/Deploy.s.sol \
 
 ## 9. Frontend (MiniPay App)
 
-> 🚧 Landing page (`/`) live with hero + live mainnet stats card. `/post`, `/bounty/[id]`, `/stats`, `/install` still pending.
+> Status: in progress. Landing page (`/`) live with hero + live mainnet stats card. `/post`, `/bounty/[id]`, `/stats`, `/install` still pending.
 > See [`apps/web/README.md`](./apps/web/README.md) for env vars, scripts, and the on-chain integration layer.
 
 
@@ -775,7 +781,7 @@ export default config;
 
 ## 10. Worker Skill (Claude Code)
 
-> ⏳ Day 4 — not started. Will ship as `@claudelance/worker` on npm.
+> Status: planned (Day 4), not started. Will ship as `@claudelance/worker` on npm.
 
 
 ### npm Package: `@claudelance/worker`
@@ -883,7 +889,7 @@ claudelance start
 
 ## 11. Relayer Service
 
-> ⏳ Day 5 — not started. Will ship as `apps/relayer` (Hono + better-sqlite3).
+> Status: planned (Day 5), not started. Will ship as `apps/relayer` (Hono + better-sqlite3).
 
 
 ### Purpose (Phase 1)
@@ -1062,7 +1068,7 @@ Critical pre-coding tasks:
 
 | Day | Focus | Critical Output | Status |
 |-----|-------|----------------|--------|
-| **Day 0** | Smart Contracts + deploy | Hardened `ClaudelanceCore.sol` (Ownable2Step, pull pattern, timelock + validity window, O(1) pickWinner) — 67 unit + 4 invariant + 28 fork tests, Slither clean, **Sepolia + Mainnet deployed and verified** | ✅ DONE |
+| **Day 0** | Smart Contracts + deploy | Hardened `ClaudelanceCore.sol` (Ownable2Step, pull pattern, timelock + validity window, O(1) pickWinner), 67 unit + 4 invariant + 28 fork tests, Slither clean, Sepolia + Mainnet deployed and verified | DONE |
 | **Day 2** | Frontend Foundation | Next.js scaffold + MiniPay hook + post bounty page | partial |
 | **Day 3** | Frontend Complete | Bounty feed + detail + winner pick + `/stats` | — |
 | **Day 4** | Worker Skill + npm #1 | Onboarding + worker loop + **publish `@claudelance/worker`** | — |
@@ -1103,9 +1109,9 @@ Critical pre-coding tasks:
 
 ### Eligibility (Required to Score)
 
-- ✅ MiniPay Compatible
-- ✅ Celo Mainnet Deploy (verified on Celoscan)
-- ✅ Talent Protocol Submission
+- MiniPay Compatible
+- Celo Mainnet Deploy (verified on Celoscan)
+- Talent Protocol Submission
 
 ### Per-Axis Optimization
 
@@ -1142,12 +1148,12 @@ Critical pre-coding tasks:
 
 | # | Milestone | Status | Evidence |
 |---|-----------|--------|----------|
-| 1 | Smart contract deployed (Day 0/1) | ✅ Done | Mainnet `0x775d…1AB5`, verified on Celoscan |
-| 2 | MiniPay app live (Day 6) | 🚧 Landing live; `/post` pending | `apps/web` |
-| 3 | Worker skill published to npm (Day 4) | ⏳ Pending | `packages/worker` |
-| 4 | First external bounty resolved (Day 8) | ⏳ Pending | Will broadcast `SeedBounties.s.sol` then resolve via Claudelance worker |
-| 5 | 10 workers onboarded (Day 11) | ⏳ Pending | — |
-| 6 | Full npm ecosystem (6 packages by Day 15) | ⏳ Pending | — |
+| 1 | Smart contract deployed (Day 0/1) | Done | Mainnet `0x775d…1AB5`, verified on Celoscan |
+| 2 | MiniPay app live (Day 6) | In progress, landing live, `/post` pending | `apps/web` |
+| 3 | Worker skill published to npm (Day 4) | Pending | `packages/worker` |
+| 4 | First external bounty resolved (Day 8) | Pending | Will broadcast `SeedBounties.s.sol` then resolve via Claudelance worker |
+| 5 | 10 workers onboarded (Day 11) | Pending | — |
+| 6 | Full npm ecosystem (6 packages by Day 15) | Pending | — |
 
 ---
 
@@ -1255,16 +1261,16 @@ Final decisions needed before Day 1:
 
 Claudelance composes everything you already do:
 
-- ✓ Multi-agent architecture (RONIN, TradingAgents)
-- ✓ Evidence pipelines (Tessera 11-step → CI verifier pattern)
-- ✓ x402 + agent commerce expertise
-- ✓ Foundry + OpenZeppelin standard stack
-- ✓ 24/7 Mac Mini infrastructure (proven with WhatsApp bot)
-- ✓ Claude Code daily usage (you're target user)
-- ✓ TypeScript ecosystem fluency (npm publishing)
-- ✓ DevRel network (BCC UKDW + Dev Web3 Jogja)
-- ✓ 4 hackathon wins (Tessera 1st at Octant)
-- ✓ Active in Indonesian Web3 builder scene
+- Multi-agent architecture (RONIN, TradingAgents)
+- Evidence pipelines (Tessera 11-step into CI verifier pattern)
+- x402 + agent commerce expertise
+- Foundry + OpenZeppelin standard stack
+- 24/7 Mac Mini infrastructure (proven with WhatsApp bot)
+- Claude Code daily usage (you're target user)
+- TypeScript ecosystem fluency (npm publishing)
+- DevRel network (BCC UKDW + Dev Web3 Jogja)
+- 4 hackathon wins (Tessera 1st at Octant)
+- Active in Indonesian Web3 builder scene
 
 **This isn't a stretch. It's the natural composition of your work**, optimized for ALL 4 Builder Score axes, with timing aligned to fresh frontier infrastructure (Circle Agent Stack launched 3 days ago, x402 hit 20M tx, ERC-8004 live mainnet, Proof of Ship #8 active until May 29).
 
