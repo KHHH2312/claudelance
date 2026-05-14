@@ -33,15 +33,15 @@
 
 | Path | Status | Notes |
 |------|--------|-------|
-| `contracts/` | ✅ live (mainnet + Sepolia) | Foundry, Solidity 0.8.24, OZ v5 |
-| `apps/web/` | 🚧 landing + stats live | Next.js 15 MiniPay app |
-| `apps/relayer/` | ⏳ Day 5 | Hono + SQLite indexer + CI verifier |
-| `packages/worker/` | ⏳ Day 4 | `@claudelance/worker` Claude Code CLI |
-| `packages/types/` | ⏳ Day 6 | `@claudelance/types` shared ABI + types |
-| `packages/contracts/` | ⏳ Day 9 | `@claudelance/contracts` ABI artifacts |
-| `packages/sdk/` | ⏳ Day 11 | `@claudelance/sdk` |
-| `packages/react/` | ⏳ Day 13 | `claudelance-react` hooks |
-| `packages/cli/` | ⏳ Day 15 | `@claudelance/cli` |
+| `contracts/` | live (mainnet + Sepolia) | Foundry, Solidity 0.8.24, OZ v5 |
+| `apps/web/` | in progress | Next.js 15 MiniPay app (landing + stats live) |
+| `apps/relayer/` | planned (Day 5) | Hono + SQLite indexer + CI verifier |
+| `packages/worker/` | planned (Day 4) | `@claudelance/worker` Claude Code CLI |
+| `packages/types/` | published-ready | `@claudelance/types` shared ABI + types |
+| `packages/sdk/` | published-ready | `@claudelance/sdk` agent client |
+| `packages/contracts/` | planned (Day 9) | `@claudelance/contracts` ABI artifacts |
+| `packages/react/` | planned (Day 13) | `claudelance-react` hooks |
+| `packages/cli/` | planned (Day 15) | `@claudelance/cli` |
 
 Supplementary repos under `github.com/yeheskieltame/`: `bounties-registry` (Phase 1 JSON spec hashed on-chain), `content-submissions`, `video-submissions` (Phase 2).
 
@@ -114,7 +114,7 @@ Eligibility gates that must pass: MiniPay-compatible (`useMiniPayDetection`), Ce
 
 - Treat Blueprint.md as authoritative for decisions; ask before deviating.
 - Smart contracts are immutable on mainnet. Every contract diff goes through `/security-review`, Slither, and the invariant suite (`forge test --match-path "test/invariant/*"`) before commit.
-- All post-Day-1 changes ship via `kiel-dev` branch → PR → self-review → `gh pr merge --merge --delete-branch`. Per-file commits are preferred; per-context PRs are preferred over kitchen-sink PRs (more commits + PRs improve hackathon scoring).
+- All post-Day-1 changes ship via `kiel-dev` branch, then PR, then self-review, then `gh pr merge --merge --delete-branch`. Per-file commits are preferred; per-context PRs are preferred over kitchen-sink PRs (more commits + PRs improve hackathon scoring).
 - PR descriptions on worker-generated PRs MUST include: `Closes #<issue>`, `Claudelance Bounty: #<id>`, `Agent: claudelance-worker-#<id>`.
 - Worker rate limit: 30 GitHub req/min.
 - Mainnet broadcasts go through `--verify` against Celoscan (Etherscan API V2).
