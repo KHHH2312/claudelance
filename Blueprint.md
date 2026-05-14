@@ -1,4 +1,4 @@
-# Claudelance — Project BlueprintExecution-Ready
+# Claudelance — Project Blueprint
 
 > The first onchain marketplace where idle Claude Code subscriptions earn cUSD by solving GitHub bounties.
 
@@ -9,6 +9,25 @@
 **Tracks:** MiniApps + AI Powered Apps & Agents (dual)
 **Submission:** Day 7 (May 21), accumulate metrics through Day 15 (May 29)
 **Scoring Axes:** Onchain + GitHub + Revenue + npm
+
+---
+
+## Status panel (2026-05-14)
+
+| Surface | State | Detail |
+|---------|-------|--------|
+| Smart contract — Celo Mainnet 42220 | ✅ Live, verified | [`0x775d4278Ad3f5695fbab3c3313175e9D85811AB5`](https://celoscan.io/address/0x775d4278ad3f5695fbab3c3313175e9d85811ab5#code) |
+| Smart contract — Celo Sepolia 11142220 | ✅ Live, verified, dogfooded (27-tx full flow) | [`0xA2cAe817311BBF725a7eAa45aD533b89396dFfd8`](https://sepolia.celoscan.io/address/0xa2cae817311bbf725a7eaa45ad533b89396dffd8#code) |
+| Test suite | ✅ 67 unit + 4 invariant + 28 fork = 99 passing | Coverage 98.45% lines / 100% branches |
+| Slither | ✅ 0 findings (filtered known-safe) | — |
+| Owner topology | ✅ Safe multisig on Celo | [Safe app](https://app.safe.global/home?safe=celo:0xe9Fc48f315fD4E989637fAcC29AaF2717E19f7F0) |
+| Frontend landing | 🚧 Hero + live stats on `/` | `apps/web` |
+| `/post`, `/bounty/[id]`, `/stats`, `/install` | ⏳ Pending | — |
+| `@claudelance/worker` npm | ⏳ Day 4 | Claude Code CLI skill |
+| `@claudelance/types` npm | ⏳ Day 6 | Shared ABI + TS types |
+| Relayer (`apps/relayer`) | ⏳ Day 5 | Hono + SQLite + CI verifier |
+
+The remaining sections describe the full intended product — sections with implementation status appear with ✅/🚧/⏳ markers near their headers.
 
 ---
 
@@ -63,6 +82,13 @@ All confirmed:
 | **Content Submission Repos** | GitHub repos per type (`content-submissions`, `video-submissions`, etc.) |
 | **Content Hash** | keccak256 (Ethereum-native, gas-efficient) |
 | **Quality Verification** | Auto-check (CI/GitHub Actions) + Poster manual review |
+| **Contract Base** | `ReentrancyGuard + Ownable2Step + Pausable`, immutable (no upgrade proxy) |
+| **Stake Settlement** | Pull pattern via `settleStake(bountyId, worker)` — `pickWinner` stays O(1) |
+| **Treasury Payout** | Pull pattern via `earnings[treasury]` — no push transfers to recipients |
+| **Admin Key Rotation** | 2-day timelock + 14-day validity window on `treasury` / `ciRelayer` rotation |
+| **Mainnet Wallet Topology** | 4 distinct keys (deployer / owner / treasury / relayer); `Deploy.s.sol` enforces on chainid 42220 |
+| **Mainnet Owner** | Safe multisig — single-key compromise insufficient to drain or hijack |
+| **Mainnet Deployer** | Talent-registered address (`0x77c4a1c…`) so deploy tx counts toward Celo Proof of Ship scoring |
 
 ---
 
@@ -148,6 +174,8 @@ All confirmed:
 ---
 
 ## 5. Repository Structure
+
+> ✅ Monorepo scaffolded. `contracts/` is live; `apps/web` is partial; `packages/*` and `apps/relayer/` are still planned.
 
 ### Main Monorepo: `github.com/yeheskieltame/claudelance`
 
@@ -375,6 +403,10 @@ Same as above EXCEPT:
 ---
 
 ## 8. Smart Contract Spec
+
+> ✅ Implemented + audited + deployed (mainnet `0x775d…1AB5`, Sepolia `0xA2cAe…dFfd8`).
+> See [`contracts/README.md`](./contracts/README.md) for the package-level surface, audit posture, and deploy commands.
+
 
 ### Foundry Setup
 
@@ -633,6 +665,10 @@ forge script script/Deploy.s.sol \
 
 ## 9. Frontend (MiniPay App)
 
+> 🚧 Landing page (`/`) live with hero + live mainnet stats card. `/post`, `/bounty/[id]`, `/stats`, `/install` still pending.
+> See [`apps/web/README.md`](./apps/web/README.md) for env vars, scripts, and the on-chain integration layer.
+
+
 ### Bootstrap
 
 ```bash
@@ -739,6 +775,9 @@ export default config;
 
 ## 10. Worker Skill (Claude Code)
 
+> ⏳ Day 4 — not started. Will ship as `@claudelance/worker` on npm.
+
+
 ### npm Package: `@claudelance/worker`
 
 ### SKILL.md Manifest
@@ -843,6 +882,9 @@ claudelance start
 ---
 
 ## 11. Relayer Service
+
+> ⏳ Day 5 — not started. Will ship as `apps/relayer` (Hono + better-sqlite3).
+
 
 ### Purpose (Phase 1)
 
@@ -1098,12 +1140,14 @@ Critical pre-coding tasks:
 
 ### KarmaGAP Milestones (6)
 
-1. ✓ Smart contract deployed (Day 1)
-2. ✓ MiniPay app live (Day 6)
-3. ✓ Worker skill published to npm (Day 4)
-4. ✓ First external bounty resolved (Day 8)
-5. ✓ 10 workers onboarded (Day 11)
-6. ✓ Full npm ecosystem (6 packages by Day 15)
+| # | Milestone | Status | Evidence |
+|---|-----------|--------|----------|
+| 1 | Smart contract deployed (Day 0/1) | ✅ Done | Mainnet `0x775d…1AB5`, verified on Celoscan |
+| 2 | MiniPay app live (Day 6) | 🚧 Landing live; `/post` pending | `apps/web` |
+| 3 | Worker skill published to npm (Day 4) | ⏳ Pending | `packages/worker` |
+| 4 | First external bounty resolved (Day 8) | ⏳ Pending | Will broadcast `SeedBounties.s.sol` then resolve via Claudelance worker |
+| 5 | 10 workers onboarded (Day 11) | ⏳ Pending | — |
+| 6 | Full npm ecosystem (6 packages by Day 15) | ⏳ Pending | — |
 
 ---
 
