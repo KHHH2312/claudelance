@@ -83,6 +83,16 @@ contract ClaudelanceCoreTest is Test {
         core.withdrawEarnings();
     }
 
+    /// @dev Sweep stakes for every claimer of `id`. Anyone can call `settleStake`,
+    ///      so the test driver does it after resolution to mirror what a relayer
+    ///      bot or the workers themselves would do in production.
+    function _settleAll(uint256 id) internal {
+        address[] memory claimers = core.getClaimers(id);
+        for (uint256 i = 0; i < claimers.length; i++) {
+            core.settleStake(id, claimers[i]);
+        }
+    }
+
     function test_PostBounty_TransfersDepositAndEmits() public {
         uint256 posterBalanceBefore = cusd.balanceOf(poster);
         uint256 id = _post();
@@ -273,9 +283,16 @@ contract ClaudelanceCoreTest is Test {
         uint96 expectedFee = uint96((uint256(AMOUNT) * 200) / 10_000);
         uint96 expectedPayout = AMOUNT - expectedFee;
 
+        // pickWinner is O(1) — only winner payout + fee are credited atomically.
         assertEq(core.earnings(treasury), expectedFee, "treasury fee credited via earnings");
-        assertEq(core.earnings(w1), uint256(expectedPayout) + STAKE);
-        assertEq(core.earnings(w2), STAKE);
+        assertEq(core.earnings(w1), uint256(expectedPayout), "winner payout only; stake pending settleStake");
+        assertEq(core.earnings(w2), 0, "loser stake pending settleStake");
+
+        // Now settle stakes (anyone can call; we do it on behalf of both claimers).
+        _settleAll(id);
+        assertEq(core.earnings(w1), uint256(expectedPayout) + STAKE, "winner stake refunded");
+        assertEq(core.earnings(w2), STAKE, "good-faith loser stake refunded");
+
         assertEq(core.totalProtocolRevenue(), expectedFee);
         assertEq(core.totalBountiesResolved(), 1);
 
@@ -334,6 +351,7 @@ contract ClaudelanceCoreTest is Test {
 
         vm.prank(poster);
         core.pickWinner(id, w1);
+        _settleAll(id);
 
         uint96 fee = uint96((uint256(AMOUNT) * 200) / 10_000);
         assertEq(core.earnings(w1), uint256(AMOUNT - fee) + STAKE);
@@ -359,8 +377,8 @@ contract ClaudelanceCoreTest is Test {
     }
 
     function test_PickWinner_NoCI_RefundsLosersWithSubmission() public {
-        // ciRequired=false branch in _settleStakes: any submitter (winner or not) gets stake back,
-        // non-submitters forfeit. This covers the `refund = true` fallthrough.
+        // ciRequired=false branch in settleStake: any submitter (winner or not) gets stake back,
+        // non-submitters forfeit. Covers the `refund = true` fallthrough.
         vm.prank(poster);
         uint256 id = core.postBounty(
             0, "github.com/x/y", "github.com/x/y/issues/1", bytes32(0), AMOUNT, MAX_SLOTS, STAKE, DEADLINE, false
@@ -376,6 +394,7 @@ contract ClaudelanceCoreTest is Test {
 
         vm.prank(poster);
         core.pickWinner(id, w1);
+        _settleAll(id);
 
         uint96 fee = uint96((uint256(AMOUNT) * 200) / 10_000);
         assertEq(core.earnings(w1), uint256(AMOUNT - fee) + STAKE, "winner gets payout + own stake");
@@ -435,6 +454,7 @@ contract ClaudelanceCoreTest is Test {
         vm.warp(block.timestamp + DEADLINE + core.RESOLUTION_GRACE_PERIOD() + 1);
 
         core.cancelExpired(id);
+        _settleAll(id);
 
         assertEq(core.earnings(poster), AMOUNT, "poster refund credited");
         assertEq(core.earnings(w1), STAKE);
@@ -626,6 +646,7 @@ contract ClaudelanceCoreTest is Test {
 
         vm.prank(stranger);
         core.cancelExpired(id);
+        core.settleStake(id, w1);
 
         assertEq(core.earnings(poster), AMOUNT);
         assertEq(core.earnings(w1), STAKE);
@@ -645,6 +666,7 @@ contract ClaudelanceCoreTest is Test {
 
         vm.prank(poster);
         core.pickWinner(id, w1);
+        core.settleStake(id, w1);
 
         uint96 fee = uint96((uint256(AMOUNT) * 200) / 10_000);
         assertEq(core.earnings(w1), uint256(AMOUNT - fee) + STAKE);
@@ -692,6 +714,26 @@ contract ClaudelanceCoreTest is Test {
         core.proposeTreasury(newT);
         vm.expectRevert(ClaudelanceCore.TimelockNotElapsed.selector);
         core.applyTreasury();
+    }
+
+    function test_ApplyTreasury_RevertsAfterValidityWindow() public {
+        address newT = makeAddr("newT");
+        vm.prank(owner);
+        core.proposeTreasury(newT);
+
+        vm.warp(block.timestamp + core.ADMIN_TIMELOCK() + core.PROPOSAL_VALIDITY_WINDOW() + 1);
+        vm.expectRevert(ClaudelanceCore.ProposalExpired.selector);
+        core.applyTreasury();
+    }
+
+    function test_ApplyCIRelayer_RevertsAfterValidityWindow() public {
+        address newR = makeAddr("newR");
+        vm.prank(owner);
+        core.proposeCIRelayer(newR);
+
+        vm.warp(block.timestamp + core.ADMIN_TIMELOCK() + core.PROPOSAL_VALIDITY_WINDOW() + 1);
+        vm.expectRevert(ClaudelanceCore.ProposalExpired.selector);
+        core.applyCIRelayer();
     }
 
     function test_ApplyTreasury_AfterTimelockRotates() public {
@@ -910,15 +952,83 @@ contract ClaudelanceCoreTest is Test {
         uint96 fee = uint96((uint256(AMOUNT) * 200) / 10_000);
         uint96 payout = AMOUNT - fee;
 
+        // pickWinner is O(1): only revenue + resolution events fire.
         vm.expectEmit(false, false, false, true);
         emit IClaudelanceCore.ProtocolRevenueAccrued(fee, fee);
         vm.expectEmit(true, true, false, true);
         emit IClaudelanceCore.BountyResolved(id, w1, payout, fee);
-        vm.expectEmit(true, true, false, true);
-        emit IClaudelanceCore.StakeRefunded(id, w1, STAKE);
 
         vm.prank(poster);
         core.pickWinner(id, w1);
+
+        // Stake events fire on the separate settleStake call.
+        vm.expectEmit(true, true, false, true);
+        emit IClaudelanceCore.StakeRefunded(id, w1, STAKE);
+        core.settleStake(id, w1);
+    }
+
+    function test_SettleStake_RevertsWhileOpen() public {
+        uint256 id = _post();
+        _claim(id, w1);
+        vm.expectRevert(ClaudelanceCore.BountyNotResolved.selector);
+        core.settleStake(id, w1);
+    }
+
+    function test_SettleStake_RevertsForNonClaimer() public {
+        uint256 id = _post();
+        _claim(id, w1);
+        _submit(id, w1);
+        _attest(id, w1, true);
+        vm.prank(poster);
+        core.pickWinner(id, w1);
+
+        vm.expectRevert(ClaudelanceCore.NotClaimer.selector);
+        core.settleStake(id, stranger);
+    }
+
+    function test_SettleStake_RevertsWhenNoStakeRequired() public {
+        vm.prank(poster);
+        uint256 id = core.postBounty(
+            0, "github.com/x/y", "github.com/x/y/issues/1", bytes32(0), AMOUNT, 1, 0, DEADLINE, false
+        );
+        _claim(id, w1);
+        vm.prank(w1);
+        core.submitPR(id, "github.com/x/y/pull/1", bytes32(0), "");
+        vm.prank(poster);
+        core.pickWinner(id, w1);
+
+        vm.expectRevert(ClaudelanceCore.NoStakeRequired.selector);
+        core.settleStake(id, w1);
+    }
+
+    function test_SettleStake_DoubleSettleReverts() public {
+        uint256 id = _post();
+        _claim(id, w1);
+        _submit(id, w1);
+        _attest(id, w1, true);
+        vm.prank(poster);
+        core.pickWinner(id, w1);
+
+        core.settleStake(id, w1);
+        vm.expectRevert(ClaudelanceCore.StakeAlreadySettled.selector);
+        core.settleStake(id, w1);
+    }
+
+    function test_SettleStake_PermissionlessCallerForForfeit() public {
+        // A non-claimer (stranger) can settle a forfeit on behalf of the protocol —
+        // important so treasury can sweep forfeits without owner action.
+        uint256 id = _post();
+        _claim(id, w1);
+        _claim(id, w2);
+        _submit(id, w1);
+        // w2 never submits -> forfeit
+        _attest(id, w1, true);
+        vm.prank(poster);
+        core.pickWinner(id, w1);
+
+        vm.prank(stranger);
+        core.settleStake(id, w2);
+        assertEq(core.earnings(treasury), uint256(uint96((uint256(AMOUNT) * 200) / 10_000)) + STAKE);
     }
 
     function testFuzz_PickWinner_FeeMathIsConsistent(uint96 amount) public {

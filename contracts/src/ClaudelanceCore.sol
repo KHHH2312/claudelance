@@ -34,6 +34,10 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable2Step, Pau
     /// @notice Mandatory delay between proposing a treasury / relayer rotation and applying it.
     ///         Gives the community a window to react if an owner key is compromised.
     uint64 public constant ADMIN_TIMELOCK = 2 days;
+    /// @notice After `effectiveAt + PROPOSAL_VALIDITY_WINDOW` a pending rotation can no longer
+    ///         be applied. Prevents a forgotten proposal from being finalized months later in a
+    ///         changed threat / governance context. Owner must `proposeX` again to refresh.
+    uint64 public constant PROPOSAL_VALIDITY_WINDOW = 14 days;
 
     uint256 public totalBountyVolume;
     uint256 public totalProtocolRevenue;
@@ -75,6 +79,10 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable2Step, Pau
     error CannotRescueCUSD();
     error NoPendingChange();
     error TimelockNotElapsed();
+    error ProposalExpired();
+    error BountyNotResolved();
+    error StakeAlreadySettled();
+    error NoStakeRequired();
 
     modifier onlyRelayer() {
         if (msg.sender != ciRelayer) revert NotRelayer();
@@ -227,11 +235,10 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable2Step, Pau
         emit CIAttested(bountyId, worker, passed);
     }
 
-    /// @notice Poster selects the winning submission. Atomic settlement: credits the
-    ///         winner's payout (minus the 2% protocol fee) and the fee to `treasury`
-    ///         via the `earnings` mapping. Refunds good-faith stakes to losers with
-    ///         passing CI; forfeits stakes to `treasury` for submissions that missed
-    ///         or failed CI. All outbound cUSD is pulled via `withdrawEarnings()`.
+    /// @notice Poster resolves the bounty. O(1) — credits winner payout, treasury fee,
+    ///         and flips status to `Resolved`. Stakes are NOT settled here: each claimer
+    ///         (or any third party) calls `settleStake(bountyId, worker)` afterwards.
+    ///         This keeps the poster's hot path cheap regardless of slot count.
     /// @param  bountyId Target bounty.
     /// @param  winner   Must be a slot claimer with a submitted and (if required) CI-passing PR.
     function pickWinner(uint256 bountyId, address winner) external nonReentrant {
@@ -247,46 +254,96 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable2Step, Pau
         b.status = BountyStatus.Resolved;
         b.winner = winner;
 
+        uint96 amount = b.amount;
         // forge-lint: disable-next-line(unsafe-typecast)
-        uint96 fee = uint96((uint256(b.amount) * PROTOCOL_FEE_BPS) / BPS_DENOMINATOR);
-        uint96 payout = b.amount - fee;
+        uint96 fee = uint96((uint256(amount) * PROTOCOL_FEE_BPS) / BPS_DENOMINATOR);
+        uint96 payout = amount - fee;
 
         earnings[winner] += payout;
         if (fee > 0) {
-            earnings[treasury] += fee;
-            totalProtocolRevenue += fee;
-            emit ProtocolRevenueAccrued(fee, totalProtocolRevenue);
+            address t = treasury;
+            earnings[t] += fee;
+            uint256 newRevenue = totalProtocolRevenue + fee;
+            totalProtocolRevenue = newRevenue;
+            emit ProtocolRevenueAccrued(fee, newRevenue);
         }
-        totalBountiesResolved += 1;
+        unchecked {
+            // bounded by bountyCount which can never overflow uint256
+            ++totalBountiesResolved;
+        }
 
         emit BountyResolved(bountyId, winner, payout, fee);
-
-        _settleStakes(bountyId, b, winner);
     }
 
-    /// @notice Cancel an unresolved bounty after `deadline`. During the
-    ///         `RESOLUTION_GRACE_PERIOD` only the poster may cancel; after grace,
-    ///         anyone may call. Credits the poster the full `amount` via `earnings`
-    ///         and settles claimer stakes with the same good-faith / forfeit rules
-    ///         as `pickWinner`.
+    /// @notice Cancel an unresolved bounty after `deadline`. O(1) — credits the poster the
+    ///         full `amount` and flips status to `Cancelled`. During the
+    ///         `RESOLUTION_GRACE_PERIOD` only the poster may cancel; after grace, anyone may
+    ///         call. Stakes are settled separately via `settleStake`.
     /// @param  bountyId Target bounty.
     function cancelExpired(uint256 bountyId) external nonReentrant {
         Bounty storage b = _bounties[bountyId];
         if (b.status != BountyStatus.Open) revert BountyNotOpen();
-        if (block.timestamp < b.deadline) revert BountyNotExpired();
+        uint64 deadline = b.deadline;
+        if (block.timestamp < deadline) revert BountyNotExpired();
         // During the grace window the poster keeps the exclusive right to resolve or
         // cancel; a passing-CI worker cannot be cancelled out by a griefer.
-        if (block.timestamp < b.deadline + RESOLUTION_GRACE_PERIOD && msg.sender != b.poster) {
+        address poster_ = b.poster;
+        if (block.timestamp < deadline + RESOLUTION_GRACE_PERIOD && msg.sender != poster_) {
             revert GracePeriodActive();
         }
 
         b.status = BountyStatus.Cancelled;
 
         uint96 refund = b.amount;
-        earnings[b.poster] += refund;
-        emit BountyCancelled(bountyId, b.poster, refund);
+        earnings[poster_] += refund;
+        emit BountyCancelled(bountyId, poster_, refund);
+    }
 
-        _settleStakes(bountyId, b, address(0));
+    /// @notice Settle a single claimer's stake after the bounty leaves the `Open` status.
+    ///         Permissionless — callers pay their own gas, so `pickWinner`/`cancelExpired`
+    ///         do not iterate claimers. Refund-vs-forfeit rules:
+    ///           - winner of a Resolved bounty            → refund
+    ///           - non-submitter                          → forfeit
+    ///           - CI-required + submitter w/ passing CI  → refund
+    ///           - CI-required + submitter w/ failed CI   → forfeit
+    ///           - CI not required + submitter            → refund
+    ///         Forfeits credit `treasury` and bump `totalProtocolRevenue`.
+    /// @param  bountyId Target bounty (must be Resolved or Cancelled).
+    /// @param  worker   The claimer whose stake is being settled.
+    function settleStake(uint256 bountyId, address worker) external nonReentrant {
+        Bounty storage b = _bounties[bountyId];
+        BountyStatus status = b.status;
+        if (status == BountyStatus.Open) revert BountyNotResolved();
+        if (!hasClaimed[bountyId][worker]) revert NotClaimer();
+        uint96 stake = b.stakeRequired;
+        if (stake == 0) revert NoStakeRequired();
+
+        Submission storage s = _submissions[bountyId][worker];
+        if (s.stakeRefunded) revert StakeAlreadySettled();
+        s.stakeRefunded = true;
+
+        bool refund;
+        if (status == BountyStatus.Resolved && worker == b.winner) {
+            refund = true;
+        } else if (s.submittedAt == 0) {
+            refund = false;
+        } else if (b.ciRequired) {
+            refund = s.ciPassed;
+        } else {
+            refund = true;
+        }
+
+        if (refund) {
+            earnings[worker] += stake;
+            emit StakeRefunded(bountyId, worker, stake);
+        } else {
+            address t = treasury;
+            earnings[t] += stake;
+            uint256 newRevenue = totalProtocolRevenue + stake;
+            totalProtocolRevenue = newRevenue;
+            emit StakeForfeited(bountyId, worker, stake);
+            emit ProtocolRevenueAccrued(stake, newRevenue);
+        }
     }
 
     /// @notice Pull-pattern withdrawal of all cUSD credited to the caller (worker payouts,
@@ -298,46 +355,6 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable2Step, Pau
         earnings[msg.sender] = 0;
         emit EarningsWithdrawn(msg.sender, amount);
         cUSD.safeTransfer(msg.sender, amount);
-    }
-
-    function _settleStakes(uint256 bountyId, Bounty storage b, address winner) internal {
-        if (b.stakeRequired == 0) return;
-
-        address[] storage claimers = _claimers[bountyId];
-        uint256 len = claimers.length;
-        uint96 totalForfeited;
-
-        for (uint256 i = 0; i < len; i++) {
-            address worker = claimers[i];
-            Submission storage s = _submissions[bountyId][worker];
-            if (s.stakeRefunded) continue;
-
-            bool refund;
-            if (worker == winner) {
-                refund = true;
-            } else if (s.submittedAt == 0) {
-                refund = false;
-            } else if (b.ciRequired) {
-                refund = s.ciPassed;
-            } else {
-                refund = true;
-            }
-
-            s.stakeRefunded = true;
-            if (refund) {
-                earnings[worker] += b.stakeRequired;
-                emit StakeRefunded(bountyId, worker, b.stakeRequired);
-            } else {
-                totalForfeited += b.stakeRequired;
-                emit StakeForfeited(bountyId, worker, b.stakeRequired);
-            }
-        }
-
-        if (totalForfeited > 0) {
-            earnings[treasury] += totalForfeited;
-            totalProtocolRevenue += totalForfeited;
-            emit ProtocolRevenueAccrued(totalForfeited, totalProtocolRevenue);
-        }
     }
 
     function getBounty(uint256 bountyId) external view returns (Bounty memory) {
@@ -359,17 +376,21 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable2Step, Pau
 
         address[] memory buffer = new address[](len);
         uint256 count;
-        for (uint256 i = 0; i < len; i++) {
+        for (uint256 i = 0; i < len;) {
             address worker = claimers[i];
             Submission storage s = _submissions[bountyId][worker];
-            if (s.submittedAt == 0) continue;
-            if (b.ciRequired && !s.ciPassed) continue;
-            buffer[count++] = worker;
+            bool eligibleEntry = s.submittedAt != 0 && (!b.ciRequired || s.ciPassed);
+            if (eligibleEntry) {
+                buffer[count] = worker;
+                unchecked { ++count; }
+            }
+            unchecked { ++i; }
         }
 
         eligible = new address[](count);
-        for (uint256 i = 0; i < count; i++) {
+        for (uint256 i = 0; i < count;) {
             eligible[i] = buffer[i];
+            unchecked { ++i; }
         }
     }
 
@@ -402,11 +423,14 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable2Step, Pau
     }
 
     /// @notice Apply a previously proposed CI relayer rotation. Anyone may call
-    ///         once the timelock has elapsed (owner has the burden to monitor).
+    ///         once the timelock has elapsed; reverts if the proposal has expired
+    ///         (i.e. older than `effectiveAt + PROPOSAL_VALIDITY_WINDOW`), in
+    ///         which case the owner must `proposeCIRelayer` again.
     function applyCIRelayer() external {
         PendingAddress memory p = pendingCIRelayer;
         if (p.proposed == address(0)) revert NoPendingChange();
         if (block.timestamp < p.effectiveAt) revert TimelockNotElapsed();
+        if (block.timestamp > uint256(p.effectiveAt) + PROPOSAL_VALIDITY_WINDOW) revert ProposalExpired();
         address previous = ciRelayer;
         ciRelayer = p.proposed;
         delete pendingCIRelayer;
@@ -431,11 +455,14 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable2Step, Pau
     }
 
     /// @notice Apply a previously proposed treasury rotation. Anyone may call
-    ///         once the timelock has elapsed.
+    ///         once the timelock has elapsed; reverts if the proposal has expired
+    ///         (i.e. older than `effectiveAt + PROPOSAL_VALIDITY_WINDOW`), in
+    ///         which case the owner must `proposeTreasury` again.
     function applyTreasury() external {
         PendingAddress memory p = pendingTreasury;
         if (p.proposed == address(0)) revert NoPendingChange();
         if (block.timestamp < p.effectiveAt) revert TimelockNotElapsed();
+        if (block.timestamp > uint256(p.effectiveAt) + PROPOSAL_VALIDITY_WINDOW) revert ProposalExpired();
         address previous = treasury;
         treasury = p.proposed;
         delete pendingTreasury;
