@@ -153,6 +153,10 @@ contract SepoliaLiveTest is Test {
         uint96 expectedFee = uint96((uint256(AMOUNT) * 200) / 10_000);
         uint96 expectedPayout = AMOUNT - expectedFee;
 
+        // Stakes settled separately (pull pattern).
+        core.settleStake(id, w1);
+        core.settleStake(id, w2);
+
         assertEq(core.earnings(w1), uint256(expectedPayout) + STAKE, "winner: payout + stake refund");
         assertEq(core.earnings(w2), STAKE, "good-faith loser: stake refund only");
         assertEq(
@@ -200,6 +204,10 @@ contract SepoliaLiveTest is Test {
         vm.warp(block.timestamp + DEADLINE + core.RESOLUTION_GRACE_PERIOD() + 1);
         vm.prank(stranger);
         core.cancelExpired(id);
+
+        // Stakes are now settled via the permissionless `settleStake` pull pattern.
+        core.settleStake(id, w1);
+        core.settleStake(id, w2);
 
         assertEq(core.earnings(poster), posterEarningsBefore + AMOUNT, "poster refund credited via earnings");
         assertEq(core.earnings(w1), STAKE, "passing-CI loser keeps stake");

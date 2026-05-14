@@ -85,5 +85,6 @@ interface IClaudelanceCore {
     function attestCI(uint256 bountyId, address worker, bool passed) external;
     function pickWinner(uint256 bountyId, address winner) external;
     function cancelExpired(uint256 bountyId) external;
+    function settleStake(uint256 bountyId, address worker) external;
     function withdrawEarnings() external;
 }
