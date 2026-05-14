@@ -274,7 +274,7 @@ claudelance/
 
 | Role | Address |
 |------|---------|
-| ClaudelanceCore (verified) | [`0x2B638dFEFa9e7538A8CeeEbe7a89CE7de4641c5C`](https://celoscan.io/address/0x2b638dfefa9e7538a8ceeebe7a89ce7de4641c5c#code) |
+| ClaudelanceCore (verified) | [`0x775d4278Ad3f5695fbab3c3313175e9D85811AB5`](https://celoscan.io/address/0x775d4278ad3f5695fbab3c3313175e9d85811ab5#code) |
 | cUSD (canonical Mento, now branded USDm) | `0x765DE816845861e75A25fCA122bb6898B8B1282a` |
 | owner / treasury / ciRelayer | distinct EOAs — see `contracts/deployments/celo-mainnet.json` |
 

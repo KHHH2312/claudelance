@@ -76,12 +76,12 @@ Per-bounty tx count: posting + N claims + N submits + N attests + pickWinner + N
 
 | Role | Address |
 |------|---------|
-| ClaudelanceCore (verified) | `0x2B638dFEFa9e7538A8CeeEbe7a89CE7de4641c5C` on chain 42220 |
+| ClaudelanceCore (verified) | `0x775d4278Ad3f5695fbab3c3313175e9D85811AB5` on chain 42220 |
 | cUSD | `0x765DE816845861e75A25fCA122bb6898B8B1282a` |
-| owner | `0x110B992e63cbd34A40ff76AcCaa47Bd2064e7222` |
+| owner | `0xe9Fc48f315fD4E989637fAcC29AaF2717E19f7F0` (Safe multisig, 2 signers, threshold=1 — change to 2 via Safe UI for full multisig safety) |
 | treasury | `0xCC0cCac212999612BdDdEb607B33CC1a46F8A401` |
 | ciRelayer | `0x1fEDda23c2945D59f3929e6C463cF685aC077ad5` |
-| deployer | `0xe6C226FA6d7fAb84046b0285b46951A002CEfdB7` |
+| deployer | `0x77c4a1cD22005b67Eb9CcEaE7E9577188d7Bca82` (Talent Protocol registered) |
 
 Sepolia staging: ClaudelanceCore `0xA2cAe817311BBF725a7eAa45aD533b89396dFfd8`, MockCUSD `0x207D662337694796E76a4d5577DC72C93Cd92822`. See `contracts/deployments/celo-{mainnet,sepolia}.json` for full state.
 
