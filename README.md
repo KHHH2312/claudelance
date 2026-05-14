@@ -36,17 +36,19 @@ cd contracts && forge install && forge test
 
 | Contract | Address | Verified source |
 |----------|---------|-----------------|
-| **ClaudelanceCore** | [`0x2B638dFEFa9e7538A8CeeEbe7a89CE7de4641c5C`](https://celoscan.io/address/0x2b638dfefa9e7538a8ceeebe7a89ce7de4641c5c) | [Celoscan source](https://celoscan.io/address/0x2b638dfefa9e7538a8ceeebe7a89ce7de4641c5c#code) |
+| **ClaudelanceCore** | [`0x775d4278Ad3f5695fbab3c3313175e9D85811AB5`](https://celoscan.io/address/0x775d4278ad3f5695fbab3c3313175e9d85811ab5) | [Celoscan source](https://celoscan.io/address/0x775d4278ad3f5695fbab3c3313175e9d85811ab5#code) |
 | cUSD (canonical) | [`0x765DE816845861e75A25fCA122bb6898B8B1282a`](https://celoscan.io/address/0x765de816845861e75a25fca122bb6898b8b1282a) | — |
 
 Operational addresses (distinct keys enforced by `Deploy.s.sol`):
 
-- Owner: `0x110B992e63cbd34A40ff76AcCaa47Bd2064e7222` *(recommend rotating to a Safe multisig via `transferOwnership`)*
-- Treasury: `0xCC0cCac212999612BdDdEb607B33CC1a46F8A401`
-- CI Relayer: `0x1fEDda23c2945D59f3929e6C463cF685aC077ad5`
-- Deployer: `0xe6C226FA6d7fAb84046b0285b46951A002CEfdB7`
+- **Owner**: [`0xe9Fc48f315fD4E989637fAcC29AaF2717E19f7F0`](https://app.safe.global/home?safe=celo:0xe9Fc48f315fD4E989637fAcC29AaF2717E19f7F0) — Safe (Gnosis Safe) multisig
+- **Treasury**: `0xCC0cCac212999612BdDdEb607B33CC1a46F8A401`
+- **CI Relayer**: `0x1fEDda23c2945D59f3929e6C463cF685aC077ad5`
+- **Deployer**: `0x77c4a1cD22005b67Eb9CcEaE7E9577188d7Bca82` (Talent Protocol registered address — deploy tx attributable for Celo Proof of Ship scoring)
 
 Full mainnet record: `contracts/deployments/celo-mainnet.json`.
+
+> **Predecessor**: an earlier mainnet deploy at `0x2B638dFEFa9e7538A8CeeEbe7a89CE7de4641c5C` was paused and abandoned when Celo Proof of Ship attribution rules required deployment from the registered address. `bountyCount` was 0 and no cUSD was ever deposited.
 
 ### Celo Sepolia (chain 11142220) — staging
 

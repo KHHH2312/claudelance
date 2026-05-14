@@ -15,7 +15,7 @@ deployed core via `contracts/deployments/celo-{mainnet,sepolia}.json`. Mainnet
 is the canonical source; Sepolia is staging. No backend is required for the
 landing page; everything is server-side viem calls.
 
-Mainnet core (chain 42220): `0x2B638dFEFa9e7538A8CeeEbe7a89CE7de4641c5C`.
+Mainnet core (chain 42220): `0x775d4278Ad3f5695fbab3c3313175e9D85811AB5`.
 Sepolia core (chain 11142220): `0xA2cAe817311BBF725a7eAa45aD533b89396dFfd8`.
 
 ## Design system
