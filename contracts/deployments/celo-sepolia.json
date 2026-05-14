@@ -1,25 +1,28 @@
 {
   "chainId": 11142220,
   "chainName": "celo-sepolia",
-  "core": "0x8223cB87CfAAB9c1a5e524545C3097df1517191D",
+  "core": "0xA2cAe817311BBF725a7eAa45aD533b89396dFfd8",
   "cUSD": "0x207D662337694796E76a4d5577DC72C93Cd92822",
   "cUSDKind": "MockCUSD (testnet stand-in; canonical cUSD does not exist on Celo Sepolia)",
   "treasury": "0x987e2ed458ddAF6f900362F94558378056dCc226",
   "ciRelayer": "0x987e2ed458ddAF6f900362F94558378056dCc226",
   "owner": "0x987e2ed458ddAF6f900362F94558378056dCc226",
-  "deployedAt": 1778702529,
   "deployer": "0x987e2ed458ddAF6f900362F94558378056dCc226",
+  "deployedAt": 1778731892,
+  "predecessor": {
+    "core": "0x8223cB87CfAAB9c1a5e524545C3097df1517191D",
+    "note": "Replaced 2026-05-14 with hardened contract after PR-9/10/11. Old deployment runs the pre-Ownable2Step ABI."
+  },
   "verification": {
     "verifier": "Etherscan API V2",
-    "verifiedAt": 1778704800,
     "compiler": "v0.8.24+commit.e11b9ed9",
     "optimizer": { "enabled": true, "runs": 200 },
     "viaIR": true
   },
   "explorer": {
     "core": {
-      "blockscout": "https://celo-sepolia.blockscout.com/address/0x8223cB87CfAAB9c1a5e524545C3097df1517191D",
-      "celoscan": "https://sepolia.celoscan.io/address/0x8223cb87cfaab9c1a5e524545c3097df1517191d#code"
+      "blockscout": "https://celo-sepolia.blockscout.com/address/0xA2cAe817311BBF725a7eAa45aD533b89396dFfd8",
+      "celoscan": "https://sepolia.celoscan.io/address/0xa2cae817311bbf725a7eaa45ad533b89396dffd8#code"
     },
     "cUSD": {
       "blockscout": "https://celo-sepolia.blockscout.com/address/0x207D662337694796E76a4d5577DC72C93Cd92822",
@@ -27,33 +30,21 @@
     }
   },
   "liveState": {
-    "capturedAt": 1778710500,
-    "bountyCount": 16,
-    "totalBountyVolume": "52500000000000000000",
-    "totalProtocolRevenue": "87500000000000000",
-    "totalBountiesResolved": 3,
-    "uniquePosterCount": 1,
+    "capturedAt": 1778735200,
+    "bountyCount": 2,
+    "totalBountyVolume": "2000000000000000000",
+    "totalProtocolRevenue": "90000000000000000",
+    "totalBountiesResolved": 2,
     "uniqueWorkerCount": 2,
+    "uniquePosterCount": 1,
     "broadcasts": [
       {
-        "script": "DeployMockCUSD.s.sol",
-        "result": "MockCUSD at 0x207D66...2822, deployer seeded 10_000 mock cUSD"
-      },
-      {
         "script": "Deploy.s.sol",
-        "result": "ClaudelanceCore at 0x8223cB...191D"
+        "result": "ClaudelanceCore (PR-11 bytecode) deployed at 0xA2cAe8…dFfd8; verified on Celoscan"
       },
       {
-        "script": "SeedBounties.s.sol",
-        "result": "15 bounties posted (ids 1-15, mixed tier, total 51.5 cUSD)"
-      },
-      {
-        "script": "IntegrationE2E.s.sol",
-        "result": "Full lifecycle on bounty id 16: post -> 2 claims -> 2 submits -> 2 CI attests -> pickWinner(W1) -> withdraw. Resolved, fee 0.02 to treasury."
-      },
-      {
-        "script": "IntegrationResolveBatch.s.sol",
-        "result": "Resolved seeded bounty id 1 via forfeit path (W2 ciPassed=false, stake forfeited 0.0375 cUSD to treasury) and id 2 via alt-winner path (W2 wins, W1 good-faith refund). totalBountiesResolved 1 -> 3, totalProtocolRevenue 0.02 -> 0.0875 cUSD."
+        "script": "IntegrationFullFlow.s.sol",
+        "result": "27 tx end-to-end: 2 bounties resolved (1 happy-path refund + 1 forfeit), settleStake permissionless pull pattern verified, propose/cancel treasury cycle, w1 withdrew 2.06 cUSD. totalProtocolRevenue = 0.09 cUSD (= 2 × 0.02 fee + 0.05 forfeit)."
       }
     ]
   }
