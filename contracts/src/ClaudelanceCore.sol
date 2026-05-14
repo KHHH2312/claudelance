@@ -43,6 +43,12 @@ contract ClaudelanceCore is IClaudelanceCore, ReentrancyGuard, Ownable2Step, Pau
 
     /// @dev One-way: once true, never flipped back. Keeps `rescueERC20` honest
     ///      and stops a malicious owner from stranding live escrows.
+    ///
+    /// IMPORTANT: whitelisted tokens MUST be non-fee-on-transfer, non-rebasing,
+    /// and non-callback (no ERC777/ERC1363 hooks). cUSD, CELO ERC20, and USDC
+    /// on Celo all satisfy this. The contract credits `totalBountyVolume[t]`
+    /// and `earnings[*][t]` based on the SENT amount, not the received amount,
+    /// so a deflationary token would over-credit and brick the last withdrawal.
     mapping(address => bool) public allowedToken;
     mapping(address => uint256) public minBounty;
 
