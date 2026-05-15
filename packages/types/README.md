@@ -139,4 +139,4 @@ The PAT needs `read:packages` scope (or `write:packages` if you're also publishi
 
 ## License
 
-MIT
+MIT — see [LICENSE](./LICENSE).
