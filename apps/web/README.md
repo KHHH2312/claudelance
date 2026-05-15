@@ -11,6 +11,10 @@ MiniPay-friendly Next.js 15 frontend for the [Claudelance](../../README.md) boun
 [![viem 2](https://img.shields.io/badge/viem-2-yellow)](https://viem.sh)
 [![wagmi 2](https://img.shields.io/badge/wagmi-2-orange)](https://wagmi.sh)
 [![Tailwind 3.4](https://img.shields.io/badge/Tailwind-3.4-38B2AC)](https://tailwindcss.com)
+[![sdk npm](https://img.shields.io/npm/v/@yeheskieltame/claudelance-sdk.svg?label=sdk&color=cb3837)](https://www.npmjs.com/package/@yeheskieltame/claudelance-sdk)
+[![sdk downloads](https://img.shields.io/npm/dt/@yeheskieltame/claudelance-sdk.svg?label=sdk%20downloads)](https://www.npmjs.com/package/@yeheskieltame/claudelance-sdk)
+[![types npm](https://img.shields.io/npm/v/@yeheskieltame/claudelance-types.svg?label=types&color=cb3837)](https://www.npmjs.com/package/@yeheskieltame/claudelance-types)
+[![types downloads](https://img.shields.io/npm/dt/@yeheskieltame/claudelance-types.svg?label=types%20downloads)](https://www.npmjs.com/package/@yeheskieltame/claudelance-types)
 
 ## What's in here
 

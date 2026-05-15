@@ -4,9 +4,12 @@
 
 # `@yeheskieltame/claudelance-types`
 
-[![npm](https://img.shields.io/npm/v/@yeheskieltame/claudelance-types?label=npm)](https://www.npmjs.com/package/@yeheskieltame/claudelance-types)
+[![npm version](https://img.shields.io/npm/v/@yeheskieltame/claudelance-types.svg?label=npm&color=cb3837)](https://www.npmjs.com/package/@yeheskieltame/claudelance-types)
+[![npm downloads](https://img.shields.io/npm/dt/@yeheskieltame/claudelance-types.svg?label=total%20downloads)](https://www.npmjs.com/package/@yeheskieltame/claudelance-types)
+[![weekly downloads](https://img.shields.io/npm/dw/@yeheskieltame/claudelance-types.svg?label=weekly)](https://www.npmjs.com/package/@yeheskieltame/claudelance-types)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@yeheskieltame/claudelance-types.svg)](https://bundlephobia.com/package/@yeheskieltame/claudelance-types)
+[![types](https://img.shields.io/npm/types/@yeheskieltame/claudelance-types.svg)](https://www.typescriptlang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![types only](https://img.shields.io/badge/runtime-zero%20deps-brightgreen)]()
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-ready-purple)](https://eips.ethereum.org/EIPS/eip-8004)
 
 TypeScript types, ABI, and deployment addresses for the [Claudelance](https://github.com/yeheskieltame/claudelance) bounty marketplace on Celo. v2 covers multi-token escrow (cUSD / CELO / USDC), ERC-8004 identity-gated workers, and the dual hire model (open marketplace + direct hire). Zero runtime dependencies.
