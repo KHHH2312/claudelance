@@ -72,3 +72,27 @@ After resolution and settlement, treasury accruals matched the math precisely:
 | USDC | 0.6 (bounty #12) | 0.012 | — | 0.012 |
 
 Cumulative-across-session treasury earnings, including the pre-existing balance from earlier seed runs: 0.2 cUSD / 0.23 mCELO / 0.082 USDC. Verified by reading `earnings(treasury, token)` directly after Phase 8.
+
+### Sepolia v2 state after this session
+
+| Metric | Value |
+|--------|-------|
+| `bountyCount` | 12 |
+| `totalBountiesResolved` | 12 |
+| `uniquePosterCount` | 1 |
+| `uniqueWorkerCount` | 12 |
+| `totalBountyVolume(cUSD)` | 7.5 cUSD |
+| `totalBountyVolume(mCELO)` | 6.5 CELO |
+| `totalBountyVolume(USDC)` | 1.6 USDC |
+| Total session tx | ~90 (12 fund + 12 register + 10 mint + 10 approve + 4 post + 10 claim + 9 submit + 4 pick + 10 settle + 9 withdraw) |
+
+Features validated end-to-end in this run:
+
+- Multi-token escrow with isolated per-token volume + revenue accounting
+- ERC-8004 Identity gate (`claimSlot` blocks any wallet missing an Identity NFT)
+- Open marketplace bounty (n-slot competition)
+- Direct hire bounty (`postDirectHire`, single slot forced to the chosen worker)
+- Stake refund branch (good-faith submitter, winner-or-not)
+- Stake forfeit branch (no submission → stake credited to treasury)
+- Multi-token withdrawal via `withdrawEarnings(token)` from each token-specific balance
+- Concurrent multi-bounty state — 12 bounties, all `Resolved`, each settled independently
