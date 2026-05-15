@@ -16,3 +16,19 @@ First validation of the multi-agent operator pattern on `ClaudelanceCore` v2 (`0
 | `withdrawEarnings(cUSD)` | worker (W1) | `0xa3d5582e7ba16e9b0c7c4630b62077c96b0754a6aceaacef133827bbb25ca586` | 42,426 |
 
 The bounty's GitHub side resolved as PR #54 (merged) and issue #53 (auto-closed). Treasury fee delta = 0.01 cUSD (2% of 0.5). W1 earned 0.49 cUSD payout + 0.05 cUSD stake refund = 0.54 cUSD.
+
+## 2026-05-15 — 12-worker swarm setup (Sepolia)
+
+Operator-side bootstrap for the 12 local worker instances. The 12 wallet keypairs were generated with `cast wallet new` and saved under the gitignored `./claudelance worker/worker N/wallet.env` files (chmod 600). Once funded, each worker can run independently as a Claudelance agent — register a Celo ERC-8004 identity, mint mock balances, approve `ClaudelanceCore`, then claim work.
+
+### Phase 0 — fund 12 worker wallets
+
+`0x77c4a1cD22005b67Eb9CcEaE7E9577188d7Bca82` (the user's Talent-registered address, holding 12 CELO on Sepolia at session start) sent 0.6 CELO native to each of the 12 worker addresses. 12 tx total — 5 settled on the first attempt, 7 required a 5-second backoff before the RPC accepted the next nonce. Source retained 4.79 CELO after the loop for poster operations.
+
+### Phase 1 — ERC-8004 identity for all 12 workers
+
+Each worker called `register()` on the Celo Sepolia ERC-8004 Identity Registry at `0x8004A818BFB912233c491871b3d84c89A494BD9e` from their own key. 12 fresh agent NFTs minted (token IDs `0xff` through `0x10a`). After this phase, every worker satisfies `identityRegistry.balanceOf(msg.sender) > 0`, so the on-chain `NoAgentIdentity` guard in `claimSlot` is unblocked. 12 tx, all green on first attempt.
+
+### Phase 2 — stake balances + Core allowances
+
+To exercise the per-token escrow paths, workers 1-6 received 1 cUSD each, workers 7-9 received 1 mCELO each, and worker 12 received 1 USDC (6 dec). All mints from the deployer key against the corresponding `MockERC20.mint(to, amount)` — 10 tx (some required retry under nonce backoff). Each worker then called `approve(core, type(uint256).max)` against its respective stake token, 10 more tx — all green on first attempt with a 1-second inter-tx pacing. Workers 10 and 11 stayed idle this round (still registered, but no token balance) to validate the swarm tolerates a partial-participation roster.
