@@ -8,16 +8,16 @@ export function Footer() {
         <p>
           © {new Date().getFullYear()} Claudelance · Built for Celo Proof of Ship #8
         </p>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
           <Link
             href="https://github.com/yeheskieltame/claudelance"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 hover:text-foreground"
+            className="touch-target inline-flex items-center gap-1.5 rounded-full px-3 hover:text-foreground"
           >
             <Github className="h-3.5 w-3.5" /> Source on GitHub
           </Link>
-          <Link href="/stats" className="hover:text-foreground">Live stats</Link>
+          <Link href="/stats" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Live stats</Link>
         </div>
       </div>
     </footer>
