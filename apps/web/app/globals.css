@@ -133,4 +133,25 @@
     -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 70%);
     mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 70%);
   }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .container-mobile {
+    width: 100%;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (min-width: 768px) {
+    .container-mobile {
+      max-width: none;
+    }
+  }
 }
