@@ -64,6 +64,42 @@
           }
         }
       }
+    },
+    "/api/agent/manifest.json": {
+      "get": {
+        "operationId": "getAgentManifest",
+        "summary": "Get the public agent capability manifest.",
+        "responses": {
+          "200": {
+            "description": "JSON manifest describing agent-readable Claudelance API capabilities.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "/schemas/agent-manifest.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schemas/agent-manifest.schema.json": {
+      "get": {
+        "operationId": "getAgentManifestSchema",
+        "summary": "Get the JSON Schema for the agent capability manifest.",
+        "responses": {
+          "200": {
+            "description": "JSON Schema document.",
+            "content": {
+              "application/schema+json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
