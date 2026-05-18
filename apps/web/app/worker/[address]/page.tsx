@@ -4,6 +4,8 @@ import type { Address } from "viem";
 import { ConnectedSelfBadge } from "@/components/connected-self-badge";
 import { Header } from "@/components/header";
 import { WorkerEarningsCard } from "@/components/worker-earnings-card";
+import { WorkerHistoryCard } from "@/components/worker-history-card";
+import { fetchWorkerHistory } from "@/lib/worker-history";
 import { fetchWorkerStats } from "@/lib/worker-stats";
 
 type Params = Promise<{ address: string }>;
@@ -21,7 +23,10 @@ export default async function WorkerPage({ params }: { params: Params }) {
 
   const lowercased = address.toLowerCase() as Address;
   const truncated = `${address.slice(0, 6)}…${address.slice(-4)}`;
-  const stats = await fetchWorkerStats(lowercased);
+  const [stats, history] = await Promise.all([
+    fetchWorkerStats(lowercased),
+    fetchWorkerHistory(lowercased).catch(() => []),
+  ]);
 
   return (
     <main className="relative isolate min-h-svh overflow-x-clip">
@@ -42,6 +47,7 @@ export default async function WorkerPage({ params }: { params: Params }) {
 
         <div className="mt-6 grid gap-4">
           <WorkerEarningsCard earnings={stats.earnings} />
+          <WorkerHistoryCard rows={history} />
         </div>
       </section>
     </main>
