@@ -36,6 +36,7 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { MiniPayBadge } from "@/components/minipay-badge";
+import { MiniPayBalanceCard } from "@/components/minipay-balance-card";
 import { useTransactionToast } from "@/components/transaction-toast";
 import { celoMainnet, celoSepolia, DEFAULT_CHAIN_ID, supportedChains } from "@/lib/chain";
 import { cn } from "@/lib/utils";
@@ -308,7 +309,14 @@ function PostBountyForm() {
         </aside>
 
         <section className="rounded-lg border bg-card p-5 shadow-sm sm:p-6" data-step={step}>
-          {step === 0 ? <TokenStep values={values} errors={errors} onChange={update} /> : null}
+          {step === 0 ? (
+            <TokenStep
+              values={values}
+              errors={errors}
+              onChange={update}
+              tokenAddress={token.address}
+            />
+          ) : null}
           {step === 1 ? <LinksStep values={values} errors={errors} onChange={update} /> : null}
           {step === 2 ? <RulesStep values={values} errors={errors} onChange={update} /> : null}
           {step === 3 ? (
@@ -392,10 +400,12 @@ function TokenStep({
   values,
   errors,
   onChange,
+  tokenAddress,
 }: {
   values: FormState;
   errors: Record<string, string>;
   onChange: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+  tokenAddress: Address;
 }) {
   return (
     <div>
@@ -416,7 +426,7 @@ function TokenStep({
           </button>
         ))}
       </div>
-      <div className="mt-5 max-w-sm">
+      <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_minmax(0,260px)]">
         <LabelledInput
           label="Reward amount"
           inputMode="decimal"
@@ -425,6 +435,7 @@ function TokenStep({
           placeholder="1"
           onChange={(value) => onChange("amount", value)}
         />
+        <MiniPayBalanceCard token={tokenAddress} tokenSymbol={values.token} />
       </div>
     </div>
   );
