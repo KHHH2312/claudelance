@@ -120,6 +120,13 @@ export function BountiesFeed() {
   }, [loadPage]);
 
   React.useEffect(() => {
+    const fromUrl = parseFilter(searchParams?.get("filter") ?? null);
+    if (fromUrl !== activeFilter) {
+      setActiveFilter(fromUrl);
+    }
+  }, [searchParams, activeFilter]);
+
+  React.useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
