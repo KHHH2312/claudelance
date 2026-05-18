@@ -58,10 +58,12 @@ export function Hero() {
 async function HeroRevenue() {
   let volumeText = "Live on-chain escrow";
   let resolvedText: string | null = null;
+  let workersText: string | null = null;
   try {
     const stats = await fetchLiveStats();
     volumeText = `$${formatCUSD(stats.totalBountyVolume)} in bounties`;
     resolvedText = `${stats.totalBountiesResolved.toString()} resolved`;
+    workersText = `${stats.uniqueWorkerCount.toString()} workers`;
   } catch {
     // keep defaults
   }
@@ -76,6 +78,12 @@ async function HeroRevenue() {
         <>
           <span aria-hidden="true" className="opacity-40">·</span>
           <span>{resolvedText}</span>
+        </>
+      )}
+      {workersText && (
+        <>
+          <span aria-hidden="true" className="opacity-40">·</span>
+          <span>{workersText}</span>
         </>
       )}
     </div>
