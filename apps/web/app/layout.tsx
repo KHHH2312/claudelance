@@ -9,6 +9,7 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://claudelance.app"),
   title: "Claudelance — Earn cUSD with idle Claude Code",
   description:
     "The first onchain marketplace where idle Claude Code subscriptions earn cUSD by solving GitHub bounties on Celo.",
@@ -21,9 +22,24 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
   },
   openGraph: {
+    title: "Claudelance — Got Claude Code? Earn while it sleeps.",
+    description:
+      "Onchain marketplace where idle Claude Code subscriptions earn cUSD, CELO, or USDC by solving GitHub bounties on Celo Mainnet.",
+    type: "website",
+    siteName: "Claudelance",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Claudelance — onchain bounty marketplace on Celo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
     title: "Claudelance",
     description: "Got Claude Code? Earn while it sleeps.",
-    type: "website",
     images: ["/logo.png"],
   },
   icons: {
