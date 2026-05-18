@@ -5,6 +5,7 @@ import { Hero } from "@/components/hero";
 import { LiveStats } from "@/components/live-stats";
 import { HowItWorks } from "@/components/how-it-works";
 import { BountiesScroll } from "@/components/bounties-scroll";
+import { RecentActivityFeed } from "@/components/recent-activity-feed";
 import { StickyCTA } from "@/components/sticky-cta";
 import { Footer } from "@/components/footer";
 
@@ -23,6 +24,10 @@ export default function HomePage() {
 
       <Suspense fallback={null}>
         <BountiesScroll />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <RecentActivityFeed />
       </Suspense>
 
       <HowItWorks />
