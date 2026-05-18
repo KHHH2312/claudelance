@@ -3,7 +3,9 @@ import { Suspense } from "react";
 import { Header } from "@/components/header";
 import { Hero } from "@/components/hero";
 import { LiveStats } from "@/components/live-stats";
-import { FeatureGrid } from "@/components/feature-grid";
+import { HowItWorks } from "@/components/how-it-works";
+import { BountiesScroll } from "@/components/bounties-scroll";
+import { StickyCTA } from "@/components/sticky-cta";
 import { Footer } from "@/components/footer";
 
 export default function HomePage() {
@@ -19,16 +21,28 @@ export default function HomePage() {
         <LiveStats />
       </Suspense>
 
-      <FeatureGrid />
+      <Suspense fallback={null}>
+        <BountiesScroll />
+      </Suspense>
+
+      <HowItWorks />
       <Footer />
+      <StickyCTA />
     </main>
   );
 }
 
 function StatsFallback() {
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 pb-20">
-      <div className="glass h-44 animate-pulse rounded-3xl" />
+    <section className="mx-auto w-full max-w-5xl px-4 pb-16">
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="glass h-36 animate-pulse rounded-3xl"
+          />
+        ))}
+      </div>
     </section>
   );
 }
