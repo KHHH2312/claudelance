@@ -150,21 +150,32 @@ export function BountiesFeed() {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Bounty filters">
-        {FILTERS.map((filter) => (
-          <button
-            key={filter.value}
-            type="button"
-            onClick={() => setActiveFilter(filter.value)}
-            className={cn(
-              "min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition",
-              activeFilter === filter.value
-                ? "border-primary bg-primary text-primary-foreground shadow-glow"
-                : "border-border bg-card/70 text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {filter.label}
-          </button>
-        ))}
+        {FILTERS.map((filter) => {
+          const active = activeFilter === filter.value;
+          return (
+            <button
+              key={filter.value}
+              type="button"
+              aria-pressed={active}
+              onClick={() => {
+                setActiveFilter(filter.value);
+                const params = new URLSearchParams(searchParams?.toString() ?? "");
+                if (filter.value === "all") params.delete("filter");
+                else params.set("filter", filter.value);
+                const next = params.toString();
+                router.replace(`${pathname}${next ? `?${next}` : ""}`, { scroll: false });
+              }}
+              className={cn(
+                "min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition",
+                active
+                  ? "border-primary bg-primary text-primary-foreground shadow-glow"
+                  : "border-border bg-card/70 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {filter.label}
+            </button>
+          );
+        })}
       </div>
 
       {error ? <EmptyState message={error} /> : null}
