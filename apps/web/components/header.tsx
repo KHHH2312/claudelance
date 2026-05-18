@@ -9,9 +9,14 @@ import { WalletButton } from "@/components/wallet-button";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { href: "/bounties", label: "Bounties" },
-  { href: "/post", label: "Post" },
-  { href: "/revenue", label: "Revenue" },
+  {
+    href: "/bounties",
+    label: "Bounties",
+    match: (path: string) =>
+      path === "/bounties" || path.startsWith("/bounties/") || path.startsWith("/bounty/"),
+  },
+  { href: "/post", label: "Post", match: (path: string) => path === "/post" || path.startsWith("/post/") },
+  { href: "/revenue", label: "Revenue", match: (path: string) => path === "/revenue" || path.startsWith("/revenue/") },
 ] as const;
 
 export function Header() {
@@ -31,7 +36,7 @@ export function Header() {
 
         <ul className="hidden items-center gap-2 text-sm text-muted-foreground md:flex">
           {navLinks.map((link) => {
-            const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+            const active = link.match(pathname);
             return (
               <li key={link.href}>
                 <Link
