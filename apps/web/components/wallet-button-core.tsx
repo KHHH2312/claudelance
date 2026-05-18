@@ -109,7 +109,7 @@ export function WalletButtonCore({
       onPointerUp={cancelLongPress}
       onPointerLeave={cancelLongPress}
       onPointerCancel={cancelLongPress}
-      title={connected ? "Right-click or long-press to disconnect" : "Connect wallet"}
+      title={connected ? "Right-click or long-press to disconnect" : "Connect wallet or sign in with GitHub"}
       className={cn("h-9 min-w-0 px-3 sm:min-w-36 sm:px-4", connected && "pr-2")}
     >
       {isPending ? (
