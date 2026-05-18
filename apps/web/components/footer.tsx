@@ -18,6 +18,7 @@ export function Footer() {
             <Github className="h-3.5 w-3.5" /> Source on GitHub
           </Link>
           <Link href="/revenue" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Live stats</Link>
+          <Link href="/about" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">About</Link>
         </div>
       </div>
     </footer>
