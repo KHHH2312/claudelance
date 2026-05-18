@@ -1,0 +1,60 @@
+import { ArrowUpRight, Sparkles } from "lucide-react";
+
+import { GlassCard } from "@/components/ui/card";
+import { fetchRecentResolved } from "@/lib/recent-bounties";
+
+function shortAddress(addr: string) {
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
+function formatCELO(wei: bigint) {
+  const whole = wei / 10n ** 18n;
+  const frac = wei % 10n ** 18n;
+  const fracStr = frac.toString().padStart(18, "0").slice(0, 3).replace(/0+$/, "");
+  return fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
+}
+
+export async function RecentActivityFeed() {
+  let rows: Awaited<ReturnType<typeof fetchRecentResolved>> = [];
+  try {
+    rows = await fetchRecentResolved(5);
+  } catch {
+    return null;
+  }
+
+  if (rows.length === 0) return null;
+
+  return (
+    <section className="mx-auto w-full max-w-3xl px-4 pb-16">
+      <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        <Sparkles aria-hidden="true" className="h-3 w-3" />
+        Live activity
+      </div>
+      <GlassCard className="!p-0 overflow-hidden">
+        <ul className="divide-y divide-border/60">
+          {rows.map((row) => (
+            <li key={row.txHash} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">
+                  Bounty #{row.bountyId.toString()} resolved
+                </p>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  Winner {shortAddress(row.winner)} · {formatCELO(row.winnerPayout)} CELO
+                </p>
+              </div>
+              <a
+                href={`https://celoscan.io/tx/${row.txHash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="touch-target inline-flex items-center gap-1 rounded-full text-xs text-muted-foreground hover:text-foreground"
+                aria-label="View resolution tx on Celoscan"
+              >
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </GlassCard>
+    </section>
+  );
+}
