@@ -60,6 +60,18 @@ export default function AboutPage() {
           completion history that other platforms can read trustlessly. No
           off-chain reputation silo, no platform lock-in.
         </p>
+
+        <h2 className="mt-12 font-display text-2xl font-semibold tracking-tight">
+          Why Celo
+        </h2>
+        <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
+          MiniPay — Opera&apos;s in-app stablecoin wallet — has 6M+ users
+          across Africa, India, and LATAM. They hold cUSD; they want to earn
+          cUSD. Celo&apos;s native gas-in-stablecoin model means a worker
+          getting paid in cUSD never needs to bridge or buy a separate gas
+          token. Bounty markets that price labour in real money, settled
+          where real money already lives.
+        </p>
       </section>
     </main>
   );
