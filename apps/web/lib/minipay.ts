@@ -15,9 +15,10 @@ export function useMiniPayDetection() {
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    if (isMiniPayProvider(window.ethereum)) {
+    const provider = window.ethereum;
+    if (isMiniPayProvider(provider)) {
       setIsMiniPay(true);
-      window.ethereum.request({ method: "eth_requestAccounts" }).catch(() => {
+      provider.request?.({ method: "eth_requestAccounts" })?.catch(() => {
         // User dismissed connection — leave isMiniPay true so the UI can still
         // adapt (hide WalletConnect, surface a "tap your address" hint).
       });

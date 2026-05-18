@@ -53,7 +53,10 @@ export function WalletButtonCore({
         await connectAsync({ connector: miniPayConnector, chainId: DEFAULT_CHAIN_ID });
         return;
       }
-      await window.ethereum?.request({ method: "eth_requestAccounts" });
+      const provider = window.ethereum;
+      if (isMiniPay(provider)) {
+        await provider.request?.({ method: "eth_requestAccounts" });
+      }
       return;
     }
 

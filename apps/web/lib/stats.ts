@@ -26,11 +26,9 @@ export async function fetchLiveStats(chainId: number = DEFAULT_CHAIN_ID): Promis
   const client = createPublicClient({ chain, transport: http(rpc) });
   const deploy = getDeployment(chainId);
 
-  const reads = await client.multicall({
+  const globals = (await client.multicall({
     contracts: [
       { address: deploy.core, abi: coreAbi, functionName: "bountyCount" },
-      { address: deploy.core, abi: coreAbi, functionName: "totalBountyVolume" },
-      { address: deploy.core, abi: coreAbi, functionName: "totalProtocolRevenue" },
       { address: deploy.core, abi: coreAbi, functionName: "totalBountiesResolved" },
       { address: deploy.core, abi: coreAbi, functionName: "uniquePosterCount" },
       { address: deploy.core, abi: coreAbi, functionName: "uniqueWorkerCount" },
@@ -38,27 +36,39 @@ export async function fetchLiveStats(chainId: number = DEFAULT_CHAIN_ID): Promis
       { address: deploy.core, abi: coreAbi, functionName: "RESOLUTION_GRACE_PERIOD" },
     ],
     allowFailure: false,
-  });
+  })) as bigint[];
 
-  const [
+  const perToken = (await client.multicall({
+    contracts: [
+      { address: deploy.core, abi: coreAbi, functionName: "totalBountyVolume", args: [deploy.cUSD] },
+      { address: deploy.core, abi: coreAbi, functionName: "totalBountyVolume", args: [deploy.CELO] },
+      { address: deploy.core, abi: coreAbi, functionName: "totalBountyVolume", args: [deploy.USDC] },
+      { address: deploy.core, abi: coreAbi, functionName: "totalProtocolRevenue", args: [deploy.cUSD] },
+      { address: deploy.core, abi: coreAbi, functionName: "totalProtocolRevenue", args: [deploy.CELO] },
+      { address: deploy.core, abi: coreAbi, functionName: "totalProtocolRevenue", args: [deploy.USDC] },
+    ],
+    allowFailure: false,
+  })) as bigint[];
+
+  const [bountyCount, totalBountiesResolved, uniquePosterCount, uniqueWorkerCount, feeBps, graceSeconds] =
+    globals as [bigint, bigint, bigint, bigint, bigint, bigint];
+  const [volCusd, volCelo, volUsdc, revCusd, revCelo, revUsdc] = perToken as [
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+  ];
+
+  return {
     bountyCount,
-    totalBountyVolume,
-    totalProtocolRevenue,
+    totalBountyVolume: volCusd + volCelo + volUsdc,
+    totalProtocolRevenue: revCusd + revCelo + revUsdc,
     totalBountiesResolved,
     uniquePosterCount,
     uniqueWorkerCount,
     feeBps,
     graceSeconds,
-  ] = reads;
-
-  return {
-    bountyCount,
-    totalBountyVolume,
-    totalProtocolRevenue,
-    totalBountiesResolved,
-    uniquePosterCount,
-    uniqueWorkerCount,
-    feeBps,
-    graceSeconds: graceSeconds as bigint,
   };
 }
