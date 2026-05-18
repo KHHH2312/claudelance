@@ -51,6 +51,11 @@ const TOKEN_STYLES: Record<string, string> = {
   usdc: "bg-sky-500/12 text-sky-700 ring-sky-500/25 dark:text-sky-300",
 };
 
+function labelFor(value: FilterValue): string {
+  const match = FILTERS.find((f) => f.value === value);
+  return match?.label ?? "All";
+}
+
 function parseFilter(raw: string | null): FilterValue {
   if (raw === "cusd" || raw === "celo" || raw === "usdc") return raw;
   if (raw === "open" || raw === "resolved") return raw;
@@ -196,6 +201,15 @@ export function BountiesFeed() {
       </div>
 
       {error ? <EmptyState message={error} /> : null}
+
+      {activeFilter !== "all" && !error && items.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Filtered by{" "}
+          <span className="font-medium text-foreground">{labelFor(activeFilter)}</span>
+          {" "}— {items.length}
+          {total != null && total !== items.length ? ` of ${total}` : ""} matching
+        </p>
+      )}
 
       {!error && items.length === 0 && !isLoading ? (
         <EmptyState message="No matching bounties yet." />
