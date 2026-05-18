@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 
 import { BottomNav } from "@/components/bottom-nav";
 import { InstallPrompt } from "@/components/install-prompt";
+import { StructuredData } from "@/components/structured-data";
 
 import { Providers } from "./providers";
 import "./globals.css";
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <BottomNav />
           <InstallPrompt />
         </Providers>
+        <StructuredData />
       </body>
     </html>
   );
