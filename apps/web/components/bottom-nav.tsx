@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coins, Home, Rss, SquarePen } from "lucide-react";
+import { Home, Rss, SquarePen, UserCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,12 @@ const navItems = [
       path.startsWith("/bounty/"),
   },
   { label: "Post", href: "/post", icon: SquarePen, match: startsWith("/post") },
-  { label: "Revenue", href: "/revenue", icon: Coins, match: startsWith("/revenue") },
+  {
+    label: "Profile",
+    href: "/worker/me",
+    icon: UserCircle,
+    match: startsWith("/worker"),
+  },
 ] as const;
 
 export function BottomNav() {

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Address } from "viem";
 
+import { ConnectedSelfBadge } from "@/components/connected-self-badge";
 import { Header } from "@/components/header";
 import { WorkerEarningsCard } from "@/components/worker-earnings-card";
 import { fetchWorkerStats } from "@/lib/worker-stats";
@@ -29,9 +30,12 @@ export default async function WorkerPage({ params }: { params: Params }) {
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           Worker dashboard
         </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          {truncated}
-        </h1>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+            {truncated}
+          </h1>
+          <ConnectedSelfBadge pageAddress={lowercased} />
+        </div>
         <p className="mt-1 font-mono text-xs text-muted-foreground break-all">
           {lowercased}
         </p>
