@@ -11,6 +11,10 @@ const bountyResolvedEvent = parseAbi([
 
 const rpcOverride = process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
 
+/** ~6 days at Celo's 5s blocktime — leaderboard window short enough
+ *  to reflect recent activity, long enough to avoid an empty list. */
+const LEADERBOARD_WINDOW_BLOCKS = 100_000n;
+
 export type ActiveWorker = {
   address: Address;
   wins: number;
@@ -23,7 +27,8 @@ export async function fetchActiveWorkers(): Promise<ActiveWorker[]> {
   const deploy = getDeployment(celoMainnet.id);
 
   const latest = await client.getBlockNumber();
-  const fromBlock = latest > 100_000n ? latest - 100_000n : 0n;
+  const fromBlock =
+    latest > LEADERBOARD_WINDOW_BLOCKS ? latest - LEADERBOARD_WINDOW_BLOCKS : 0n;
 
   const logs = await client.getLogs({
     address: deploy.core as Address,
