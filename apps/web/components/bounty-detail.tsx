@@ -209,14 +209,15 @@ function PickWinnerCard({
 }) {
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
-  const trackTx = useTransactionToast({
+  const [txHash, setTxHash] = React.useState<Hash | null>(null);
+  useTransactionToast(txHash, {
     pendingMessage: "Picking winner",
     confirmedMessage: "Winner picked",
     failedMessage: "Pick failed",
   });
 
   const [selected, setSelected] = React.useState<string>(submissions[0]?.worker ?? "");
-  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID)!.core as Address;
 
   const pick = async () => {
     if (!selected) return;
@@ -227,7 +228,7 @@ function PickWinnerCard({
         functionName: "pickWinner",
         args: [BigInt(bountyId), selected as Address],
       })) as Hash;
-      await trackTx(hash);
+      setTxHash(hash);
     } catch {
       // User rejected — selection state preserved for retry
     }
@@ -289,7 +290,8 @@ function PickWinnerCard({
 function SubmitPRCard({ bountyId }: { bountyId: string }) {
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
-  const trackTx = useTransactionToast({
+  const [txHash, setTxHash] = React.useState<Hash | null>(null);
+  useTransactionToast(txHash, {
     pendingMessage: "Submitting PR",
     confirmedMessage: "PR submitted",
     failedMessage: "Submit failed",
@@ -297,7 +299,7 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
 
   const [prUrl, setPrUrl] = React.useState("");
   const [commitSha, setCommitSha] = React.useState("");
-  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID)!.core as Address;
 
   const canSubmit = prUrl.startsWith("https://github.com/") && /^[0-9a-fA-F]{40}$/.test(commitSha);
 
@@ -310,7 +312,7 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
         functionName: "submitPR",
         args: [BigInt(bountyId), prUrl, padded, ""],
       })) as Hash;
-      await trackTx(hash);
+      setTxHash(hash);
     } catch {
       // User rejected — keep inputs intact for retry
     }
@@ -370,13 +372,14 @@ function SettleStakeCard({
 }) {
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
-  const trackTx = useTransactionToast({
+  const [txHash, setTxHash] = React.useState<Hash | null>(null);
+  useTransactionToast(txHash, {
     pendingMessage: "Settling stake",
     confirmedMessage: "Stake refunded",
     failedMessage: "Settle failed",
   });
 
-  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID)!.core as Address;
 
   const settle = async () => {
     try {
@@ -386,7 +389,7 @@ function SettleStakeCard({
         functionName: "settleStake",
         args: [BigInt(bountyId), worker],
       })) as Hash;
-      await trackTx(hash);
+      setTxHash(hash);
     } catch {
       // User rejected
     }
@@ -423,13 +426,14 @@ function SettleStakeCard({
 function WithdrawEarningsCard({ token }: { token: string }) {
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
-  const trackTx = useTransactionToast({
+  const [txHash, setTxHash] = React.useState<Hash | null>(null);
+  useTransactionToast(txHash, {
     pendingMessage: "Withdrawing earnings",
     confirmedMessage: "Earnings withdrawn",
     failedMessage: "Withdraw failed",
   });
 
-  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID)!.core as Address;
 
   const withdraw = async () => {
     try {
@@ -439,7 +443,7 @@ function WithdrawEarningsCard({ token }: { token: string }) {
         functionName: "withdrawEarnings",
         args: [token as Address],
       })) as Hash;
-      await trackTx(hash);
+      setTxHash(hash);
     } catch {
       // User rejected
     }
@@ -486,14 +490,15 @@ function ClaimSlotCard({
 }) {
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
-  const trackTx = useTransactionToast({
+  const [txHash, setTxHash] = React.useState<Hash | null>(null);
+  useTransactionToast(txHash, {
     pendingMessage: "Claiming slot",
     confirmedMessage: "Slot claimed",
     failedMessage: "Claim failed",
   });
 
   const isFull = claimedSlots >= maxSlots;
-  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID)!.core as Address;
   const stakeCELO = (Number(stakeRequired) / 1e18).toFixed(2);
 
   const claim = async () => {
@@ -504,9 +509,9 @@ function ClaimSlotCard({
         functionName: "claimSlot",
         args: [BigInt(bountyId)],
       })) as Hash;
-      await trackTx(hash);
+      setTxHash(hash);
     } catch {
-      // User rejected or RPC failed — toast surfaces via trackTx for confirmed txs only
+      // User rejected or RPC failed
     }
   };
 
