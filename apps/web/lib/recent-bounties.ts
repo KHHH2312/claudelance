@@ -11,6 +11,10 @@ const bountyResolvedEvent = parseAbi([
 
 const rpcOverride = process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
 
+/** ~3 days at Celo's 5s blocktime — recent enough that the hero
+ *  ticker shows fresh wins; cheap getLogs call. */
+const RECENT_WINDOW_BLOCKS = 50_000n;
+
 export type ResolvedBountyLog = {
   bountyId: bigint;
   winner: Address;
@@ -25,7 +29,8 @@ export async function fetchRecentResolved(limit = 5): Promise<ResolvedBountyLog[
   const deploy = getDeployment(celoMainnet.id);
 
   const latest = await client.getBlockNumber();
-  const fromBlock = latest > 50_000n ? latest - 50_000n : 0n;
+  const fromBlock =
+    latest > RECENT_WINDOW_BLOCKS ? latest - RECENT_WINDOW_BLOCKS : 0n;
 
   const logs = await client.getLogs({
     address: deploy.core as Address,
