@@ -23,10 +23,17 @@ const buttonVariants = cva(
           "border border-border bg-transparent hover:bg-accent hover:text-accent-foreground",
       },
       size: {
+<<<<<<< HEAD
         sm: "h-11 px-4 text-sm",
         md: "h-11 px-6",
         lg: "h-13 px-7 text-base",
         icon: "h-10 w-10",
+=======
+        sm: "h-11 min-w-11 px-4",
+        md: "h-11 min-w-11 px-6",
+        lg: "h-13 min-w-11 px-7 text-base",
+        icon: "h-11 w-11",
+>>>>>>> origin/main
       },
     },
     defaultVariants: { variant: "primary", size: "md" },
