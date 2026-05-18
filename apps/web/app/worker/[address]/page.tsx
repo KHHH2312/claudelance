@@ -1,11 +1,15 @@
 import { notFound } from "next/navigation";
+import type { Address } from "viem";
 
 import { Header } from "@/components/header";
-import { GlassCard } from "@/components/ui/card";
+import { WorkerEarningsCard } from "@/components/worker-earnings-card";
+import { fetchWorkerStats } from "@/lib/worker-stats";
 
 type Params = Promise<{ address: string }>;
 
 const ADDR = /^0x[0-9a-fA-F]{40}$/;
+
+export const revalidate = 30;
 
 export default async function WorkerPage({ params }: { params: Params }) {
   const { address } = await params;
@@ -14,7 +18,9 @@ export default async function WorkerPage({ params }: { params: Params }) {
     notFound();
   }
 
+  const lowercased = address.toLowerCase() as Address;
   const truncated = `${address.slice(0, 6)}…${address.slice(-4)}`;
+  const stats = await fetchWorkerStats(lowercased);
 
   return (
     <main className="relative isolate min-h-svh overflow-x-clip">
@@ -27,14 +33,12 @@ export default async function WorkerPage({ params }: { params: Params }) {
           {truncated}
         </h1>
         <p className="mt-1 font-mono text-xs text-muted-foreground break-all">
-          {address.toLowerCase()}
+          {lowercased}
         </p>
 
-        <GlassCard className="!p-6 mt-6">
-          <p className="text-sm text-muted-foreground">
-            Worker stats coming up — earnings, claimed bounties, submissions.
-          </p>
-        </GlassCard>
+        <div className="mt-6 grid gap-4">
+          <WorkerEarningsCard earnings={stats.earnings} />
+        </div>
       </section>
     </main>
   );
