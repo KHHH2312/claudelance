@@ -5,9 +5,9 @@ import { createPublicClient, http, parseAbi, type Address } from "viem";
 import { celoMainnet } from "@/lib/chain";
 import { getDeployment } from "@/lib/contracts";
 
-const bountyResolvedEvent = parseAbi([
+const [bountyResolvedEvent] = parseAbi([
   "event BountyResolved(uint256 indexed bountyId, address indexed winner, uint96 winnerPayout, uint96 protocolFee)",
-]);
+] as const);
 
 const rpcOverride = process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
 
@@ -28,7 +28,7 @@ export async function fetchWorkerHistory(worker: Address): Promise<WorkerHistory
 
   const logs = await client.getLogs({
     address: deploy.core as Address,
-    events: bountyResolvedEvent,
+    event: bountyResolvedEvent,
     args: { winner: worker },
     fromBlock,
     toBlock: latest,
