@@ -1,6 +1,7 @@
 import { ArrowUpRight, Trophy } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/card";
+import { txUrl } from "@/lib/celoscan";
 import { formatCELO } from "@/lib/format-token";
 import type { WorkerHistoryRow } from "@/lib/worker-history";
 
@@ -31,7 +32,7 @@ export function WorkerHistoryCard({ rows }: { rows: WorkerHistoryRow[] }) {
                 </p>
               </div>
               <a
-                href={`https://celoscan.io/tx/${row.txHash}`}
+                href={txUrl(row.txHash)}
                 target="_blank"
                 rel="noreferrer"
                 className="touch-target inline-flex items-center gap-1 rounded-full text-xs text-muted-foreground hover:text-foreground"

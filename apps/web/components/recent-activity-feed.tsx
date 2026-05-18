@@ -1,6 +1,7 @@
 import { ArrowUpRight, Sparkles } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/card";
+import { txUrl } from "@/lib/celoscan";
 import { fetchRecentResolved } from "@/lib/recent-bounties";
 import { formatCELO } from "@/lib/format-token";
 import { shortAddress } from "@/lib/utils";
@@ -34,7 +35,7 @@ export async function RecentActivityFeed() {
                 </p>
               </div>
               <a
-                href={`https://celoscan.io/tx/${row.txHash}`}
+                href={txUrl(row.txHash)}
                 target="_blank"
                 rel="noreferrer"
                 className="touch-target inline-flex items-center gap-1 rounded-full text-xs text-muted-foreground hover:text-foreground"
