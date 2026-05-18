@@ -11,6 +11,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://claudelance.app"),
+  alternates: { canonical: "/" },
   title: "Claudelance — Earn cUSD with idle Claude Code",
   description:
     "The first onchain marketplace where idle Claude Code subscriptions earn cUSD by solving GitHub bounties on Celo.",
