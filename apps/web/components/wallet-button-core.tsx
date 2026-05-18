@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronDown, Loader2, LogOut, Wallet } from "lucide-react";
+import { Check, ChevronDown, Github, Loader2, LogOut, Wallet } from "lucide-react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ type WalletButtonCoreProps = {
   privyReady?: boolean;
   privyAuthenticated?: boolean;
   privyAddress?: string;
+  privyGithub?: string | null;
 };
 
 export function WalletButtonCore({
@@ -23,6 +24,7 @@ export function WalletButtonCore({
   privyReady = true,
   privyAuthenticated = false,
   privyAddress,
+  privyGithub,
 }: WalletButtonCoreProps) {
   const { address, chain, connector, isConnected } = useAccount();
   const { connectAsync, connectors, isPending } = useConnect();
@@ -121,9 +123,16 @@ export function WalletButtonCore({
       <span className="sr-only">{connected ? `${label} connected on ${chainName}` : "Connect wallet"}</span>
       {connected ? (
         <>
-          <span className="hidden rounded-full border border-border/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground md:inline">
-            {connectorName}
-          </span>
+          {privyGithub ? (
+            <span className="hidden items-center gap-1 rounded-full border border-border/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground md:inline-flex">
+              <Github aria-hidden="true" className="h-3 w-3" />
+              {privyGithub}
+            </span>
+          ) : (
+            <span className="hidden rounded-full border border-border/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground md:inline">
+              {connectorName}
+            </span>
+          )}
           <span className="hidden rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success sm:inline">
             {chainName}
           </span>
