@@ -208,6 +208,31 @@ function PickWinnerCard({ bountyId }: { bountyId: string }) {
 }
 
 function SubmitPRCard({ bountyId }: { bountyId: string }) {
+  const chainId = useChainId();
+  const { writeContractAsync, isPending } = useWriteContract();
+  const trackTx = useTransactionToast({
+    pendingMessage: "Submitting PR",
+    confirmedMessage: "PR submitted",
+    failedMessage: "Submit failed",
+  });
+
+  const [prUrl, setPrUrl] = React.useState("");
+  const [commitSha, setCommitSha] = React.useState("");
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+
+  const canSubmit = prUrl.startsWith("https://github.com/") && /^[0-9a-fA-F]{40}$/.test(commitSha);
+
+  const submit = async () => {
+    const padded = `0x${commitSha.toLowerCase()}000000000000000000000000` as Hash;
+    const hash = (await writeContractAsync({
+      address: core,
+      abi: CLAUDELANCE_CORE_ABI,
+      functionName: "submitPR",
+      args: [BigInt(bountyId), prUrl, padded, ""],
+    })) as Hash;
+    await trackTx(hash);
+  };
+
   return (
     <GlassCard className="!p-6">
       <div className="flex items-start gap-4">
@@ -218,11 +243,35 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
           <h3 className="font-semibold">Submit your PR</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             You&apos;ve claimed this bounty. Submit your pull request URL and
-            commit hash to complete your entry.
+            commit hash (40 hex chars) to complete your entry.
           </p>
-          <Button size="sm" className="mt-4">
-            Submit PR
-          </Button>
+          <div className="mt-4 space-y-3">
+            <input
+              type="url"
+              placeholder="https://github.com/yeheskieltame/claudelance/pull/123"
+              value={prUrl}
+              onChange={(e) => setPrUrl(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <input
+              type="text"
+              placeholder="Commit SHA (40 hex chars)"
+              value={commitSha}
+              onChange={(e) => setCommitSha(e.target.value.replace(/^0x/, "").trim())}
+              maxLength={40}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <Button size="sm" onClick={submit} disabled={!canSubmit || isPending}>
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Submitting
+                </>
+              ) : (
+                "Submit PR"
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </GlassCard>
