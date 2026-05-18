@@ -5,6 +5,7 @@ import { ConnectedSelfBadge } from "@/components/connected-self-badge";
 import { Header } from "@/components/header";
 import { WorkerEarningsCard } from "@/components/worker-earnings-card";
 import { WorkerHistoryCard } from "@/components/worker-history-card";
+import { shortAddress } from "@/lib/utils";
 import { fetchWorkerHistory } from "@/lib/worker-history";
 import { fetchWorkerStats } from "@/lib/worker-stats";
 
@@ -22,7 +23,7 @@ export default async function WorkerPage({ params }: { params: Params }) {
   }
 
   const lowercased = address.toLowerCase() as Address;
-  const truncated = `${address.slice(0, 6)}…${address.slice(-4)}`;
+  const truncated = shortAddress(address);
   const [stats, history] = await Promise.all([
     fetchWorkerStats(lowercased),
     fetchWorkerHistory(lowercased).catch(() => []),
