@@ -1,4 +1,4 @@
-import { ArrowUpRight, Hammer, Users, Wallet } from "lucide-react";
+import { ArrowUpRight, Coins, Hammer, ScanLine, Users } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/card";
 import { fetchLiveStats } from "@/lib/stats";
@@ -22,54 +22,56 @@ export async function LiveStats() {
   const chain = chainById(DEFAULT_CHAIN_ID);
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 pb-16">
-      <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            Marketplace pulse · {chain?.name}
-          </p>
-          <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">
-            Receipts, not promises.
-          </h2>
-        </div>
-        <a
-          href={`${chain?.blockExplorers?.default.url}/address/${deployment.core}#code`}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          View verified contract <ArrowUpRight className="h-3.5 w-3.5" />
-        </a>
-      </div>
+    <section className="mx-auto w-full max-w-5xl px-4 pb-20">
+      <GlassCard className="!p-0">
+        <header className="flex flex-col gap-1 border-b border-white/10 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Marketplace pulse · {chain?.name}
+            </p>
+            <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+              Receipts, not promises.
+            </h2>
+          </div>
+          <a
+            href={`${chain?.blockExplorers?.default.url}/address/${deployment.core}#code`}
+            target="_blank"
+            rel="noreferrer"
+            className="touch-target inline-flex items-center gap-1 rounded-full text-sm text-muted-foreground hover:text-foreground"
+          >
+            View verified contract <ArrowUpRight className="h-3.5 w-3.5" />
+          </a>
+        </header>
 
-      {error ? (
-        <GlassCard className="!p-6 text-center text-sm text-destructive">
-          {error}
-        </GlassCard>
-      ) : snapshot ? (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Stat
-            icon={<Hammer className="h-5 w-5" />}
-            label="Bounties resolved"
-            value={snapshot.totalBountiesResolved.toString()}
-            accent="primary"
-          />
-          <Stat
-            icon={<Users className="h-5 w-5" />}
-            label="Unique workers"
-            value={snapshot.uniqueWorkerCount.toString()}
-            accent="accent"
-            sub={`${snapshot.uniquePosterCount} posters`}
-          />
-          <Stat
-            icon={<Wallet className="h-5 w-5" />}
-            label="Total volume"
-            value={`$${formatCUSD(snapshot.totalBountyVolume)}`}
-            accent="emerald"
-            sub={`${(Number(snapshot.feeBps) / 100).toFixed(2)}% protocol fee`}
-          />
-        </div>
-      ) : null}
+        {error ? (
+          <p className="p-6 text-sm text-destructive">{error}</p>
+        ) : snapshot ? (
+          <ul className="grid grid-cols-2 divide-y divide-white/10 sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+            <Stat
+              icon={<Hammer className="h-4 w-4" />}
+              label="Bounties posted"
+              value={snapshot.bountyCount.toString()}
+            />
+            <Stat
+              icon={<Coins className="h-4 w-4" />}
+              label="cUSD volume"
+              value={`$${formatCUSD(snapshot.totalBountyVolume)}`}
+            />
+            <Stat
+              icon={<ScanLine className="h-4 w-4" />}
+              label="Resolved"
+              value={snapshot.totalBountiesResolved.toString()}
+              sub={`${(Number(snapshot.feeBps) / 100).toFixed(2)}% fee`}
+            />
+            <Stat
+              icon={<Users className="h-4 w-4" />}
+              label="Unique workers"
+              value={snapshot.uniqueWorkerCount.toString()}
+              sub={`${snapshot.uniquePosterCount} posters`}
+            />
+          </ul>
+        ) : null}
+      </GlassCard>
     </section>
   );
 }
@@ -79,34 +81,20 @@ function Stat({
   label,
   value,
   sub,
-  accent,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   sub?: string;
-  accent: "primary" | "accent" | "emerald";
 }) {
-  const iconBg: Record<string, string> = {
-    primary: "bg-primary/10 text-primary",
-    accent: "bg-accent text-accent-foreground",
-    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  };
-
   return (
-    <GlassCard className="!p-6 hover:shadow-glass-strong transition-shadow">
-      <span
-        className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${iconBg[accent]}`}
-      >
+    <li className="flex flex-col gap-1 p-6">
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent text-accent-foreground">
         {icon}
       </span>
-      <p className="mt-3 text-xs uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-3xl font-semibold tracking-tight">
-        {value}
-      </p>
-      {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
-    </GlassCard>
+      <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{value}</p>
+      {sub ? <p className="text-xs text-muted-foreground">{sub}</p> : null}
+    </li>
   );
 }

@@ -10,15 +10,9 @@ import { Footer } from "@/components/footer";
 
 export default function HomePage() {
   return (
-    <main className="relative isolate min-h-dvh overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-anime opacity-40 dark:opacity-30"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 grid-pattern opacity-30 dark:opacity-20"
-      />
+    <main className="relative isolate min-h-svh overflow-x-clip">
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-anime opacity-40 dark:opacity-30" />
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 grid-pattern opacity-30 dark:opacity-20" />
 
       <Header />
       <Hero />
