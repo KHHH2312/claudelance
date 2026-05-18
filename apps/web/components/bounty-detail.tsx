@@ -220,13 +220,17 @@ function PickWinnerCard({
 
   const pick = async () => {
     if (!selected) return;
-    const hash = (await writeContractAsync({
-      address: core,
-      abi: CLAUDELANCE_CORE_ABI,
-      functionName: "pickWinner",
-      args: [BigInt(bountyId), selected as Address],
-    })) as Hash;
-    await trackTx(hash);
+    try {
+      const hash = (await writeContractAsync({
+        address: core,
+        abi: CLAUDELANCE_CORE_ABI,
+        functionName: "pickWinner",
+        args: [BigInt(bountyId), selected as Address],
+      })) as Hash;
+      await trackTx(hash);
+    } catch {
+      // User rejected — selection state preserved for retry
+    }
   };
 
   return (
@@ -298,14 +302,18 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
   const canSubmit = prUrl.startsWith("https://github.com/") && /^[0-9a-fA-F]{40}$/.test(commitSha);
 
   const submit = async () => {
-    const padded = `0x${commitSha.toLowerCase()}000000000000000000000000` as Hash;
-    const hash = (await writeContractAsync({
-      address: core,
-      abi: CLAUDELANCE_CORE_ABI,
-      functionName: "submitPR",
-      args: [BigInt(bountyId), prUrl, padded, ""],
-    })) as Hash;
-    await trackTx(hash);
+    try {
+      const padded = `0x${commitSha.toLowerCase()}000000000000000000000000` as Hash;
+      const hash = (await writeContractAsync({
+        address: core,
+        abi: CLAUDELANCE_CORE_ABI,
+        functionName: "submitPR",
+        args: [BigInt(bountyId), prUrl, padded, ""],
+      })) as Hash;
+      await trackTx(hash);
+    } catch {
+      // User rejected — keep inputs intact for retry
+    }
   };
 
   return (
@@ -371,13 +379,17 @@ function SettleStakeCard({
   const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
 
   const settle = async () => {
-    const hash = (await writeContractAsync({
-      address: core,
-      abi: CLAUDELANCE_CORE_ABI,
-      functionName: "settleStake",
-      args: [BigInt(bountyId), worker],
-    })) as Hash;
-    await trackTx(hash);
+    try {
+      const hash = (await writeContractAsync({
+        address: core,
+        abi: CLAUDELANCE_CORE_ABI,
+        functionName: "settleStake",
+        args: [BigInt(bountyId), worker],
+      })) as Hash;
+      await trackTx(hash);
+    } catch {
+      // User rejected
+    }
   };
 
   return (
@@ -420,13 +432,17 @@ function WithdrawEarningsCard({ token }: { token: string }) {
   const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
 
   const withdraw = async () => {
-    const hash = (await writeContractAsync({
-      address: core,
-      abi: CLAUDELANCE_CORE_ABI,
-      functionName: "withdrawEarnings",
-      args: [token as Address],
-    })) as Hash;
-    await trackTx(hash);
+    try {
+      const hash = (await writeContractAsync({
+        address: core,
+        abi: CLAUDELANCE_CORE_ABI,
+        functionName: "withdrawEarnings",
+        args: [token as Address],
+      })) as Hash;
+      await trackTx(hash);
+    } catch {
+      // User rejected
+    }
   };
 
   return (
@@ -481,13 +497,17 @@ function ClaimSlotCard({
   const stakeCELO = (Number(stakeRequired) / 1e18).toFixed(2);
 
   const claim = async () => {
-    const hash = (await writeContractAsync({
-      address: core,
-      abi: CLAUDELANCE_CORE_ABI,
-      functionName: "claimSlot",
-      args: [BigInt(bountyId)],
-    })) as Hash;
-    await trackTx(hash);
+    try {
+      const hash = (await writeContractAsync({
+        address: core,
+        abi: CLAUDELANCE_CORE_ABI,
+        functionName: "claimSlot",
+        args: [BigInt(bountyId)],
+      })) as Hash;
+      await trackTx(hash);
+    } catch {
+      // User rejected or RPC failed — toast surfaces via trackTx for confirmed txs only
+    }
   };
 
   return (
