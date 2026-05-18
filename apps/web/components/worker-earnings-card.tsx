@@ -2,6 +2,8 @@ import { Coins } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/card";
 import { formatTokenAmount } from "@/lib/format-token";
+import { TOKEN_BADGE } from "@/lib/token-theme";
+import { cn } from "@/lib/utils";
 import type { TokenEarnings } from "@/lib/worker-stats";
 
 const DECIMALS: Record<TokenEarnings["symbol"], number> = {
@@ -33,7 +35,14 @@ export function WorkerEarningsCard({ earnings }: { earnings: TokenEarnings[] }) 
                 key={row.symbol}
                 className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
               >
-                <span className="font-medium">{row.symbol}</span>
+                <span
+                  className={cn(
+                    "rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1",
+                    TOKEN_BADGE[row.symbol],
+                  )}
+                >
+                  {row.symbol}
+                </span>
                 <span className="font-mono">{formatted}</span>
               </li>
             );
