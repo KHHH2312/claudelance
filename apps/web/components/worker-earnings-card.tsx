@@ -1,6 +1,7 @@
 import { Coins } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/card";
+import { formatTokenAmount } from "@/lib/format-token";
 import type { TokenEarnings } from "@/lib/worker-stats";
 
 const DECIMALS: Record<TokenEarnings["symbol"], number> = {
@@ -26,7 +27,7 @@ export function WorkerEarningsCard({ earnings }: { earnings: TokenEarnings[] }) 
         <ul className="mt-4 space-y-2 text-sm">
           {earnings.map((row) => {
             if (row.amount === 0n) return null;
-            const formatted = formatTokenAmount(row.amount, DECIMALS[row.symbol]);
+            const formatted = formatTokenAmount(row.amount, DECIMALS[row.symbol], 6);
             return (
               <li
                 key={row.symbol}
@@ -49,14 +50,3 @@ export function WorkerEarningsCard({ earnings }: { earnings: TokenEarnings[] }) 
   );
 }
 
-function formatTokenAmount(raw: bigint, decimals: number): string {
-  if (raw === 0n) return "0";
-  const negative = raw < 0n;
-  const abs = negative ? -raw : raw;
-  const base = 10n ** BigInt(decimals);
-  const whole = abs / base;
-  const frac = abs % base;
-  const fracStr = frac.toString().padStart(decimals, "0").slice(0, 6).replace(/0+$/, "");
-  const out = fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
-  return negative ? `-${out}` : out;
-}

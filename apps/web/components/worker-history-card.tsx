@@ -1,14 +1,8 @@
 import { ArrowUpRight, Trophy } from "lucide-react";
 
 import { GlassCard } from "@/components/ui/card";
+import { formatCELO } from "@/lib/format-token";
 import type { WorkerHistoryRow } from "@/lib/worker-history";
-
-function formatCELO(wei: bigint) {
-  const whole = wei / 10n ** 18n;
-  const frac = wei % 10n ** 18n;
-  const fracStr = frac.toString().padStart(18, "0").slice(0, 3).replace(/0+$/, "");
-  return fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
-}
 
 export function WorkerHistoryCard({ rows }: { rows: WorkerHistoryRow[] }) {
   return (
