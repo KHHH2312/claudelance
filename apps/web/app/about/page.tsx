@@ -1,4 +1,7 @@
 import { Header } from "@/components/header";
+import { contractCodeUrl } from "@/lib/celoscan";
+
+const CORE_ADDRESS = "0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423";
 
 export const metadata = {
   title: "About — Claudelance",
@@ -81,7 +84,7 @@ export default function AboutPage() {
           at{" "}
           <a
             className="underline-offset-2 hover:underline"
-            href="https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code"
+            href={contractCodeUrl(CORE_ADDRESS)}
           >
             <code className="font-mono text-xs">0x1362d8…E423</code>
           </a>
