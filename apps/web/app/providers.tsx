@@ -25,7 +25,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      {privyAppId ? <PrivyProvider appId={privyAppId}>{app}</PrivyProvider> : app}
+      {privyAppId ? (
+        <PrivyProvider
+          appId={privyAppId}
+          config={{
+            loginMethods: ["github", "wallet", "email"],
+            appearance: { theme: "dark", accentColor: "#7C5CFC" },
+            embeddedWallets: { createOnLogin: "users-without-wallets" },
+          }}
+        >
+          {app}
+        </PrivyProvider>
+      ) : (
+        app
+      )}
     </ThemeProvider>
   );
 }
