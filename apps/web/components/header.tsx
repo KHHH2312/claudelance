@@ -22,8 +22,7 @@ export function Header() {
         <ul className="hidden items-center gap-2 text-sm text-muted-foreground md:flex">
           <li><Link href="/bounties" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Bounties</Link></li>
           <li><Link href="/post" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Post</Link></li>
-          <li><Link href="/stats" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Stats</Link></li>
-          <li><Link href="/install" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Install</Link></li>
+          <li><Link href="/revenue" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Revenue</Link></li>
         </ul>
 
         <div className="flex items-center gap-2">
