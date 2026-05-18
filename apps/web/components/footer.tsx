@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { Github } from "lucide-react";
+import { Github, Globe } from "lucide-react";
+
+import { contractCodeUrl } from "@/lib/celoscan";
+
+const CORE = "0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423";
 
 export function Footer() {
   return (
@@ -19,6 +23,14 @@ export function Footer() {
           </Link>
           <Link href="/revenue" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Live stats</Link>
           <Link href="/about" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">About</Link>
+          <Link
+            href={contractCodeUrl(CORE)}
+            target="_blank"
+            rel="noreferrer"
+            className="touch-target inline-flex items-center gap-1.5 rounded-full px-3 hover:text-foreground"
+          >
+            <Globe className="h-3.5 w-3.5" /> Celoscan
+          </Link>
         </div>
       </div>
     </footer>
