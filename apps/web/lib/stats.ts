@@ -2,6 +2,7 @@ import { createPublicClient, http } from "viem";
 
 import { celoSepolia, DEFAULT_CHAIN_ID, chainById } from "./chain";
 import { coreAbi, getDeployment } from "./contracts";
+import { getCeloUsdPrice, tokenToCeloWei } from "./price";
 
 export type LiveStats = {
   bountyCount: bigint;
@@ -12,6 +13,16 @@ export type LiveStats = {
   uniqueWorkerCount: bigint;
   feeBps: bigint;
   graceSeconds: bigint;
+  /// Per-token raw volumes (wei, native decimals).
+  volumeByToken: {
+    cUSD: bigint;
+    CELO: bigint;
+    USDC: bigint;
+  };
+  /// Cross-token volume expressed in CELO wei, computed via the CELO/USD oracle.
+  /// cUSD and USDC are treated as $1 stablecoins, then converted at the live rate.
+  totalVolumeInCelo: bigint;
+  celoUsdPrice: number;
 };
 
 const rpcOverrides: Partial<Record<number, string>> = {
@@ -61,6 +72,11 @@ export async function fetchLiveStats(chainId: number = DEFAULT_CHAIN_ID): Promis
     bigint,
   ];
 
+  const celoUsdPrice = await getCeloUsdPrice();
+  const cusdInCelo = tokenToCeloWei(volCusd, 18, 1, celoUsdPrice);
+  const usdcInCelo = tokenToCeloWei(volUsdc, 6, 1, celoUsdPrice);
+  const totalVolumeInCelo = volCelo + cusdInCelo + usdcInCelo;
+
   return {
     bountyCount,
     totalBountyVolume: volCusd + volCelo + volUsdc,
@@ -70,5 +86,8 @@ export async function fetchLiveStats(chainId: number = DEFAULT_CHAIN_ID): Promis
     uniqueWorkerCount,
     feeBps,
     graceSeconds,
+    volumeByToken: { cUSD: volCusd, CELO: volCelo, USDC: volUsdc },
+    totalVolumeInCelo,
+    celoUsdPrice,
   };
 }
