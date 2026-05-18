@@ -4,16 +4,13 @@ import type { Address } from "viem";
 
 import { GlassCard } from "@/components/ui/card";
 import { formatCELO } from "@/lib/format-token";
+import { shortAddress } from "@/lib/utils";
 
 export type WorkerListRowData = {
   address: Address;
   wins: number;
   totalPayout: bigint;
 };
-
-function shortAddress(addr: string) {
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
 
 export function WorkerListRow({ row, rank }: { row: WorkerListRowData; rank: number }) {
   return (
