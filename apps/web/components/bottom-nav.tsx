@@ -8,7 +8,15 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Home", href: "/", icon: Home, match: (path: string) => path === "/" },
-  { label: "Bounties", href: "/bounties", icon: Rss, match: startsWith("/bounties") },
+  {
+    label: "Bounties",
+    href: "/bounties",
+    icon: Rss,
+    match: (path: string) =>
+      path === "/bounties" ||
+      path.startsWith("/bounties/") ||
+      path.startsWith("/bounty/"),
+  },
   { label: "Post", href: "/post", icon: SquarePen, match: startsWith("/post") },
   { label: "Revenue", href: "/revenue", icon: Coins, match: startsWith("/revenue") },
 ] as const;
