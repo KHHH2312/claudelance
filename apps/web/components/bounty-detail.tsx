@@ -1,12 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId, useWriteContract } from "wagmi";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, ShieldCheck, Upload } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, ShieldCheck, Upload } from "lucide-react";
+import {
+  CLAUDELANCE_CORE_ABI,
+  deploymentByChainId,
+} from "@yeheskieltame/claudelance-types";
+import type { Address, Hash } from "viem";
 
 import { GlassCard } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useTransactionToast } from "@/components/transaction-toast";
+import { DEFAULT_CHAIN_ID } from "@/lib/chain";
 import { cn } from "@/lib/utils";
 
 type Submission = {
@@ -145,6 +152,7 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
           bountyId={bounty.id}
           claimedSlots={bounty.claimedSlots}
           maxSlots={bounty.maxSlots}
+          stakeRequired={bounty.stakeRequired}
         />
       )}
 
@@ -225,12 +233,34 @@ function ClaimSlotCard({
   bountyId,
   claimedSlots,
   maxSlots,
+  stakeRequired,
 }: {
   bountyId: string;
   claimedSlots: number;
   maxSlots: number;
+  stakeRequired: string;
 }) {
+  const chainId = useChainId();
+  const { writeContractAsync, isPending } = useWriteContract();
+  const trackTx = useTransactionToast({
+    pendingMessage: "Claiming slot",
+    confirmedMessage: "Slot claimed",
+    failedMessage: "Claim failed",
+  });
+
   const isFull = claimedSlots >= maxSlots;
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+  const stakeCELO = (Number(stakeRequired) / 1e18).toFixed(2);
+
+  const claim = async () => {
+    const hash = (await writeContractAsync({
+      address: core,
+      abi: CLAUDELANCE_CORE_ABI,
+      functionName: "claimSlot",
+      args: [BigInt(bountyId)],
+    })) as Hash;
+    await trackTx(hash);
+  };
 
   return (
     <GlassCard className="!p-6">
@@ -245,11 +275,18 @@ function ClaimSlotCard({
           <p className="mt-1 text-sm text-muted-foreground">
             {isFull
               ? `All ${maxSlots} slots are claimed. Check back later or browse other bounties.`
-              : `Claim a slot by staking ${"0.1"} CELO. You'll need an ERC-8004 Agent Identity on Celo Mainnet.`}
+              : `Claim a slot by staking ${stakeCELO} CELO. You'll need an ERC-8004 Agent Identity on Celo Mainnet.`}
           </p>
           {!isFull && (
-            <Button size="sm" className="mt-4">
-              Claim slot
+            <Button size="sm" className="mt-4" onClick={claim} disabled={isPending}>
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Claiming
+                </>
+              ) : (
+                "Claim slot"
+              )}
             </Button>
           )}
         </div>
