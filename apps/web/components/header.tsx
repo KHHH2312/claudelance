@@ -1,12 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Sparkles } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { WalletButton } from "@/components/wallet-button";
+import { cn } from "@/lib/utils";
+
+const navLinks = [
+  { href: "/bounties", label: "Bounties" },
+  { href: "/post", label: "Post" },
+  { href: "/revenue", label: "Revenue" },
+] as const;
 
 export function Header() {
+  const pathname = usePathname() || "/";
+
   return (
     <header className="sticky top-4 z-40 mx-auto w-full max-w-6xl px-4">
       <nav className="glass flex h-14 items-center justify-between rounded-full px-4 sm:h-16 sm:px-6">
@@ -20,9 +30,23 @@ export function Header() {
         </Link>
 
         <ul className="hidden items-center gap-2 text-sm text-muted-foreground md:flex">
-          <li><Link href="/bounties" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Bounties</Link></li>
-          <li><Link href="/post" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Post</Link></li>
-          <li><Link href="/revenue" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Revenue</Link></li>
+          {navLinks.map((link) => {
+            const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+            return (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "touch-target inline-flex items-center rounded-full px-3 transition-colors hover:text-foreground",
+                    active && "bg-primary/10 text-foreground",
+                  )}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="flex items-center gap-2">
