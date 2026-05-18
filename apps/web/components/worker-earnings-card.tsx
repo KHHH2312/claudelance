@@ -1,0 +1,62 @@
+import { Coins } from "lucide-react";
+
+import { GlassCard } from "@/components/ui/card";
+import type { TokenEarnings } from "@/lib/worker-stats";
+
+const DECIMALS: Record<TokenEarnings["symbol"], number> = {
+  cUSD: 18,
+  CELO: 18,
+  USDC: 6,
+};
+
+export function WorkerEarningsCard({ earnings }: { earnings: TokenEarnings[] }) {
+  const hasAny = earnings.some((e) => e.amount > 0n);
+
+  return (
+    <GlassCard className="!p-6">
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+          <Coins aria-hidden="true" className="h-4 w-4" />
+        </span>
+        <h2 className="font-display text-lg font-semibold">
+          Pending earnings (on-protocol)
+        </h2>
+      </div>
+      {hasAny ? (
+        <ul className="mt-4 space-y-2 text-sm">
+          {earnings.map((row) => {
+            if (row.amount === 0n) return null;
+            const formatted = formatTokenAmount(row.amount, DECIMALS[row.symbol]);
+            return (
+              <li
+                key={row.symbol}
+                className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+              >
+                <span className="font-medium">{row.symbol}</span>
+                <span className="font-mono">{formatted}</span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Nothing pending. Resolved bounty rewards land here before
+          <code className="mx-1 rounded bg-muted px-1.5 py-0.5 text-xs">withdrawEarnings</code>
+          pulls them to the wallet.
+        </p>
+      )}
+    </GlassCard>
+  );
+}
+
+function formatTokenAmount(raw: bigint, decimals: number): string {
+  if (raw === 0n) return "0";
+  const negative = raw < 0n;
+  const abs = negative ? -raw : raw;
+  const base = 10n ** BigInt(decimals);
+  const whole = abs / base;
+  const frac = abs % base;
+  const fracStr = frac.toString().padStart(decimals, "0").slice(0, 6).replace(/0+$/, "");
+  const out = fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
+  return negative ? `-${out}` : out;
+}
