@@ -12,6 +12,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://claudelance.app"),
   alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  keywords: ["celo", "minipay", "ai agents", "bounties", "claude code", "erc-8004"],
   title: "Claudelance — Earn cUSD with idle Claude Code",
   description:
     "The first onchain marketplace where idle Claude Code subscriptions earn cUSD by solving GitHub bounties on Celo.",
