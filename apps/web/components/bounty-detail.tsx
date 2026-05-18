@@ -181,6 +181,13 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
           )}
         </GlassCard>
       )}
+
+      {/* Winner: withdraw earnings */}
+      {bounty.status === 1 &&
+        isConnected &&
+        normalizedAddress === bounty.winner.toLowerCase() && (
+          <WithdrawEarningsCard token={bounty.token} />
+        )}
     </div>
   );
 }
@@ -332,6 +339,55 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
               )}
             </Button>
           </div>
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function WithdrawEarningsCard({ token }: { token: string }) {
+  const chainId = useChainId();
+  const { writeContractAsync, isPending } = useWriteContract();
+  const trackTx = useTransactionToast({
+    pendingMessage: "Withdrawing earnings",
+    confirmedMessage: "Earnings withdrawn",
+    failedMessage: "Withdraw failed",
+  });
+
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+
+  const withdraw = async () => {
+    const hash = (await writeContractAsync({
+      address: core,
+      abi: CLAUDELANCE_CORE_ABI,
+      functionName: "withdrawEarnings",
+      args: [token as Address],
+    })) as Hash;
+    await trackTx(hash);
+  };
+
+  return (
+    <GlassCard className="!p-6">
+      <div className="flex items-start gap-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+          <CheckCircle2 className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold">Withdraw your earnings</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            You won this bounty. Pull your reward from the protocol earnings
+            balance (gross minus the 2% protocol fee).
+          </p>
+          <Button size="sm" className="mt-4" onClick={withdraw} disabled={isPending}>
+            {isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Withdrawing
+              </>
+            ) : (
+              "Withdraw earnings"
+            )}
+          </Button>
         </div>
       </div>
     </GlassCard>
