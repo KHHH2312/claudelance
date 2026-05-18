@@ -35,6 +35,7 @@ import {
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { MiniPayBadge } from "@/components/minipay-badge";
 import { useTransactionToast } from "@/components/transaction-toast";
 import { celoMainnet, celoSepolia, DEFAULT_CHAIN_ID, supportedChains } from "@/lib/chain";
 import { cn } from "@/lib/utils";
@@ -257,6 +258,9 @@ function PostBountyForm() {
         <div>
           <p className="text-sm font-medium text-muted-foreground">Create bounty</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Post an onchain task</h1>
+          <div className="mt-3">
+            <MiniPayBadge />
+          </div>
         </div>
         <WalletStrip
           address={address}
