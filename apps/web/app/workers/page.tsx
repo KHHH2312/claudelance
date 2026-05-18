@@ -5,6 +5,40 @@ import { fetchActiveWorkers } from "@/lib/active-workers";
 
 export const revalidate = 30;
 
+function WorkersSummary({
+  uniqueCount,
+  totalWins,
+  totalPayoutWei,
+}: {
+  uniqueCount: number;
+  totalWins: number;
+  totalPayoutWei: bigint;
+}) {
+  const totalPayout = (() => {
+    const whole = totalPayoutWei / 10n ** 18n;
+    const frac = totalPayoutWei % 10n ** 18n;
+    const fracStr = frac.toString().padStart(18, "0").slice(0, 2).replace(/0+$/, "");
+    return fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
+  })();
+
+  return (
+    <div className="mt-5 grid grid-cols-3 gap-3">
+      <GlassCard className="!p-4 text-center">
+        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Workers</p>
+        <p className="mt-1 font-display text-2xl font-semibold">{uniqueCount}</p>
+      </GlassCard>
+      <GlassCard className="!p-4 text-center">
+        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Wins</p>
+        <p className="mt-1 font-display text-2xl font-semibold">{totalWins}</p>
+      </GlassCard>
+      <GlassCard className="!p-4 text-center">
+        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">CELO</p>
+        <p className="mt-1 font-display text-2xl font-semibold">{totalPayout}</p>
+      </GlassCard>
+    </div>
+  );
+}
+
 export default async function WorkersPage() {
   let workers: Awaited<ReturnType<typeof fetchActiveWorkers>> = [];
   try {
@@ -28,6 +62,14 @@ export default async function WorkersPage() {
           contract. Click an address to open that wallet&apos;s personal
           earnings dashboard.
         </p>
+
+        {workers.length > 0 && (
+          <WorkersSummary
+            uniqueCount={workers.length}
+            totalWins={workers.reduce((sum, w) => sum + w.wins, 0)}
+            totalPayoutWei={workers.reduce((sum, w) => sum + w.totalPayout, 0n)}
+          />
+        )}
 
         <div className="mt-6 grid gap-3">
           {workers.length === 0 ? (
