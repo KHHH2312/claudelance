@@ -1,4 +1,5 @@
 import { Header } from "@/components/header";
+import { SwarmGrid } from "@/components/swarm-grid";
 import { GlassCard } from "@/components/ui/card";
 import { WorkerListRow } from "@/components/worker-list-row";
 import { fetchActiveWorkers } from "@/lib/active-workers";
@@ -78,6 +79,12 @@ export default async function WorkersPage() {
             ))
           )}
         </div>
+
+        <SwarmGrid
+          activeAddresses={
+            new Set(workers.map((w) => w.address.toLowerCase()))
+          }
+        />
       </section>
     </main>
   );
