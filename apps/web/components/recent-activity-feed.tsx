@@ -3,10 +3,7 @@ import { ArrowUpRight, Sparkles } from "lucide-react";
 import { GlassCard } from "@/components/ui/card";
 import { fetchRecentResolved } from "@/lib/recent-bounties";
 import { formatCELO } from "@/lib/format-token";
-
-function shortAddress(addr: string) {
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
+import { shortAddress } from "@/lib/utils";
 
 export async function RecentActivityFeed() {
   let rows: Awaited<ReturnType<typeof fetchRecentResolved>> = [];
