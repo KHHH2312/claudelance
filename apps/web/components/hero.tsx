@@ -45,7 +45,7 @@ export function Hero() {
           </Link>
         </Button>
         <Button size="lg" variant="glass" asChild>
-          <Link href="/install">
+          <Link href="/bounties">
             <Github className="h-4 w-4" />
             Become a worker
           </Link>
