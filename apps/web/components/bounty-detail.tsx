@@ -188,6 +188,14 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
         normalizedAddress === bounty.winner.toLowerCase() && (
           <WithdrawEarningsCard token={bounty.token} />
         )}
+
+      {/* Claimer: settle stake (anyone can call but UI prompts claimers) */}
+      {bounty.status === 1 && isClaimer && (
+        <SettleStakeCard
+          bountyId={bounty.id}
+          worker={normalizedAddress as Address}
+        />
+      )}
     </div>
   );
 }
@@ -339,6 +347,61 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
               )}
             </Button>
           </div>
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function SettleStakeCard({
+  bountyId,
+  worker,
+}: {
+  bountyId: string;
+  worker: Address;
+}) {
+  const chainId = useChainId();
+  const { writeContractAsync, isPending } = useWriteContract();
+  const trackTx = useTransactionToast({
+    pendingMessage: "Settling stake",
+    confirmedMessage: "Stake refunded",
+    failedMessage: "Settle failed",
+  });
+
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+
+  const settle = async () => {
+    const hash = (await writeContractAsync({
+      address: core,
+      abi: CLAUDELANCE_CORE_ABI,
+      functionName: "settleStake",
+      args: [BigInt(bountyId), worker],
+    })) as Hash;
+    await trackTx(hash);
+  };
+
+  return (
+    <GlassCard className="!p-6">
+      <div className="flex items-start gap-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+          <ShieldCheck className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold">Settle your stake</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Bounty is resolved. Pull your refundable stake back to your wallet.
+            This call is permissionless — anyone can settle on your behalf.
+          </p>
+          <Button size="sm" className="mt-4" onClick={settle} disabled={isPending}>
+            {isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Settling
+              </>
+            ) : (
+              "Settle stake"
+            )}
+          </Button>
         </div>
       </div>
     </GlassCard>
