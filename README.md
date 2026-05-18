@@ -68,6 +68,7 @@ The deployed frontend exposes JSON endpoints judges + monitoring tools can curl 
 | `GET /api/stats` | Live protocol stats (bountyCount, totalBountiesResolved, totalProtocolRevenue, uniquePosters, uniqueWorkers, feeBps) | 30s |
 | `GET /api/bounties` | Paginated bounty feed (B44) | dynamic |
 | `GET /api/bounty/[id]` | Single bounty detail (B45) | dynamic |
+| `GET /api/worker/[address]` | Per-worker earnings + resolved-bounty history | 30s |
 | `GET /api/agent/manifest.json` | Capability manifest for AI agents (B43) | static |
 | `GET /llms.txt` | LLM-discoverable index of protocol surface (B46) | static |
 | `GET /sitemap.xml` | App sitemap | static |
