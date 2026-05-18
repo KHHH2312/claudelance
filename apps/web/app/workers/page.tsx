@@ -2,6 +2,7 @@ import { Header } from "@/components/header";
 import { GlassCard } from "@/components/ui/card";
 import { WorkerListRow } from "@/components/worker-list-row";
 import { fetchActiveWorkers } from "@/lib/active-workers";
+import { formatTokenAmount } from "@/lib/format-token";
 
 export const revalidate = 30;
 
@@ -14,12 +15,7 @@ function WorkersSummary({
   totalWins: number;
   totalPayoutWei: bigint;
 }) {
-  const totalPayout = (() => {
-    const whole = totalPayoutWei / 10n ** 18n;
-    const frac = totalPayoutWei % 10n ** 18n;
-    const fracStr = frac.toString().padStart(18, "0").slice(0, 2).replace(/0+$/, "");
-    return fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
-  })();
+  const totalPayout = formatTokenAmount(totalPayoutWei, 18, 2);
 
   return (
     <div className="mt-5 grid grid-cols-3 gap-3">
