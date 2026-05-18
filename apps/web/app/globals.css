@@ -73,12 +73,15 @@
 
   html {
     scroll-behavior: smooth;
+    min-height: 100svh;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    min-height: 100svh;
     min-height: 100dvh;
+    overflow-x: clip;
     background-image:
       radial-gradient(ellipse at 12% -10%, hsl(var(--primary) / 0.18), transparent 55%),
       radial-gradient(ellipse at 110% 10%, hsl(var(--accent) / 0.35), transparent 60%),
@@ -114,6 +117,27 @@
     color: transparent;
   }
 
+  .mobile-shell {
+    width: min(100%, 480px);
+    margin-inline: auto;
+  }
+
+  .safe-area-bottom {
+    padding-bottom: max(5rem, calc(5rem + env(safe-area-inset-bottom)));
+  }
+
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  @screen sm {
+    .mobile-shell {
+      width: 100%;
+      max-width: none;
+    }
+  }
+
   .bg-anime {
     background-image: var(--bg-image-light);
     background-size: cover;
@@ -132,5 +156,26 @@
     background-size: 48px 48px;
     -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 70%);
     mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 70%);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .container-mobile {
+    width: 100%;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (min-width: 768px) {
+    .container-mobile {
+      max-width: none;
+    }
   }
 }

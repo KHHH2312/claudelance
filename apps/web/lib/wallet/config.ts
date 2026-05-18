@@ -1,58 +1,44 @@
+import type { EIP1193Provider } from "viem";
 import { createConfig, http } from "wagmi";
 import { injected } from "wagmi/connectors";
-import type { EIP1193Provider } from "viem";
 
-import { celoMainnet, celoSepolia } from "@/lib/chain";
+import { celoMainnet, celoSepolia } from "../chain";
 
-type MiniPayProvider = EIP1193Provider & {
+type MiniPayCandidate = {
   isMiniPay?: boolean;
+  request?: EIP1193Provider["request"];
 };
 
-type WalletWindow = Window & {
-  ethereum?: MiniPayProvider;
-};
+export const connectorResolutionOrder = ["minipay", "privy"] as const;
 
-function injectedProvider(win?: unknown) {
-  const walletWindow =
-    win ?? (typeof window === "undefined" ? undefined : window);
+export type ConnectorResolution = (typeof connectorResolutionOrder)[number];
 
-  return (walletWindow as WalletWindow | undefined)?.ethereum;
+export function isMiniPay(provider: unknown = getInjectedProvider()): provider is MiniPayCandidate {
+  return Boolean(provider && typeof provider === "object" && (provider as MiniPayCandidate).isMiniPay === true);
 }
 
-export function isMiniPay(provider: EIP1193Provider | undefined = injectedProvider()) {
-  return Boolean((provider as MiniPayProvider | undefined)?.isMiniPay);
+export function resolveConnector(provider: unknown = getInjectedProvider()): ConnectorResolution {
+  return isMiniPay(provider) ? "minipay" : "privy";
 }
 
 const miniPayConnector = injected({
   shimDisconnect: true,
-  target: {
-    id: "minipay",
-    name: "MiniPay",
-    provider: (win) => {
-      const provider = injectedProvider(win);
-      return isMiniPay(provider) ? provider : undefined;
-    },
+  target() {
+    const provider = getInjectedProvider();
+    if (!isMiniPay(provider)) return undefined;
+
+    return {
+      id: "minipay",
+      name: "MiniPay",
+      provider: provider as EIP1193Provider,
+    };
   },
 });
 
-const privyConnector = injected({
-  shimDisconnect: true,
-  target: {
-    id: "privy",
-    name: "Privy",
-    provider: (win) => {
-      const provider = injectedProvider(win);
-      return provider && !isMiniPay(provider) ? provider : undefined;
-    },
-  },
-});
-
-// Resolution order is intentional: MiniPay wins inside the MiniPay browser,
-// and Privy handles the non-MiniPay web flow.
 export const wagmiConfig = createConfig({
-  ssr: true,
   chains: [celoMainnet, celoSepolia],
-  connectors: [miniPayConnector, privyConnector],
+  connectors: [miniPayConnector],
+  ssr: true,
   transports: {
     [celoMainnet.id]: http(process.env.NEXT_PUBLIC_CELO_MAINNET_RPC),
     [celoSepolia.id]: http(process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC),
@@ -63,4 +49,9 @@ declare module "wagmi" {
   interface Register {
     config: typeof wagmiConfig;
   }
+}
+
+function getInjectedProvider(): unknown {
+  if (typeof window === "undefined") return undefined;
+  return (window as Window & { ethereum?: unknown }).ethereum;
 }

@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx --test components/bounty-card.snapshot.test.tsx",
+    "test": "tsx --test components/bounty-card.snapshot.test.tsx lib/wallet/config.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

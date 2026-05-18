@@ -37,7 +37,7 @@ export async function LiveStats() {
             href={`${chain?.blockExplorers?.default.url}/address/${deployment.core}#code`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            className="touch-target inline-flex items-center gap-1 rounded-full text-sm text-muted-foreground hover:text-foreground"
           >
             View verified contract <ArrowUpRight className="h-3.5 w-3.5" />
           </a>
