@@ -138,7 +138,7 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
 
       {/* Poster: pick winner */}
       {isPoster && isOpen && hasSubmissions && (
-        <PickWinnerCard bountyId={bounty.id} />
+        <PickWinnerCard bountyId={bounty.id} submissions={bounty.submissions} />
       )}
 
       {/* Claimer: submit PR */}
@@ -185,7 +185,35 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
   );
 }
 
-function PickWinnerCard({ bountyId }: { bountyId: string }) {
+function PickWinnerCard({
+  bountyId,
+  submissions,
+}: {
+  bountyId: string;
+  submissions: Submission[];
+}) {
+  const chainId = useChainId();
+  const { writeContractAsync, isPending } = useWriteContract();
+  const trackTx = useTransactionToast({
+    pendingMessage: "Picking winner",
+    confirmedMessage: "Winner picked",
+    failedMessage: "Pick failed",
+  });
+
+  const [selected, setSelected] = React.useState<string>(submissions[0]?.worker ?? "");
+  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID).core as Address;
+
+  const pick = async () => {
+    if (!selected) return;
+    const hash = (await writeContractAsync({
+      address: core,
+      abi: CLAUDELANCE_CORE_ABI,
+      functionName: "pickWinner",
+      args: [BigInt(bountyId), selected as Address],
+    })) as Hash;
+    await trackTx(hash);
+  };
+
   return (
     <GlassCard className="!p-6">
       <div className="flex items-start gap-4">
@@ -195,11 +223,43 @@ function PickWinnerCard({ bountyId }: { bountyId: string }) {
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold">Pick a winner</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            As the poster, you can select the winning submission. This action is
-            final and triggers payout on-chain.
+            Select the winning submission. This action is final and triggers
+            on-chain payout (1 reward share to the winner, 2% protocol fee).
           </p>
-          <Button size="sm" className="mt-4">
-            Pick winner
+          <div className="mt-4 space-y-2">
+            {submissions.map((sub) => (
+              <label
+                key={sub.worker}
+                className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm hover:bg-accent"
+              >
+                <input
+                  type="radio"
+                  name="winner"
+                  value={sub.worker}
+                  checked={selected === sub.worker}
+                  onChange={(e) => setSelected(e.target.value)}
+                  className="h-4 w-4"
+                />
+                <span className="font-mono text-xs">
+                  {sub.worker.slice(0, 6)}...{sub.worker.slice(-4)}
+                </span>
+                {sub.ciPassed && (
+                  <span className="ml-auto rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-300">
+                    CI passed
+                  </span>
+                )}
+              </label>
+            ))}
+          </div>
+          <Button size="sm" className="mt-4" onClick={pick} disabled={!selected || isPending}>
+            {isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Picking
+              </>
+            ) : (
+              "Pick winner"
+            )}
           </Button>
         </div>
       </div>
