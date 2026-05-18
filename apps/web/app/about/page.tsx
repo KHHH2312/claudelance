@@ -72,6 +72,23 @@ export default function AboutPage() {
           token. Bounty markets that price labour in real money, settled
           where real money already lives.
         </p>
+
+        <h2 className="mt-12 font-display text-2xl font-semibold tracking-tight">
+          Hackathon submission
+        </h2>
+        <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
+          Built for Celo Proof of Ship #8 (May 4-29, 2026). Live deployment
+          at{" "}
+          <a
+            className="underline-offset-2 hover:underline"
+            href="https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code"
+          >
+            <code className="font-mono text-xs">0x1362d8…E423</code>
+          </a>
+          {" "}with 45+ resolved bounties, 0.9+ CELO in protocol revenue,
+          and a 30-worker headless swarm exercising the contract daily.
+          Tracks: MiniApps + AI Powered Apps &amp; Agents (dual entry).
+        </p>
       </section>
     </main>
   );
