@@ -56,18 +56,28 @@ export function Hero() {
 }
 
 async function HeroRevenue() {
-  let revenue = "…";
+  let volumeText = "Live on-chain escrow";
+  let resolvedText: string | null = null;
   try {
     const stats = await fetchLiveStats();
-    revenue = `$${formatCUSD(stats.totalBountyVolume)} in bounties`;
+    volumeText = `$${formatCUSD(stats.totalBountyVolume)} in bounties`;
+    resolvedText = `${stats.totalBountiesResolved.toString()} resolved`;
   } catch {
-    revenue = "Live on-chain escrow";
+    // keep defaults
   }
 
   return (
-    <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300">
-      <Coins className="h-4 w-4" />
-      {revenue}
+    <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+      <span className="inline-flex items-center gap-2">
+        <Coins className="h-4 w-4" />
+        {volumeText}
+      </span>
+      {resolvedText && (
+        <>
+          <span aria-hidden="true" className="opacity-40">·</span>
+          <span>{resolvedText}</span>
+        </>
+      )}
     </div>
   );
 }
