@@ -149,7 +149,7 @@ export function BountiesFeed() {
         </Button>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Bounty filters">
+      <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1" aria-label="Bounty filters">
         {FILTERS.map((filter) => {
           const active = activeFilter === filter.value;
           return (
@@ -176,6 +176,23 @@ export function BountiesFeed() {
             </button>
           );
         })}
+        {activeFilter !== "all" && (
+          <button
+            type="button"
+            onClick={() => {
+              setActiveFilter("all");
+              const params = new URLSearchParams(searchParams?.toString() ?? "");
+              params.delete("filter");
+              const next = params.toString();
+              router.replace(`${pathname}${next ? `?${next}` : ""}`, { scroll: false });
+            }}
+            className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-xs text-muted-foreground hover:text-foreground"
+            aria-label="Clear filter"
+          >
+            <X aria-hidden="true" className="h-3.5 w-3.5" />
+            Clear
+          </button>
+        )}
       </div>
 
       {error ? <EmptyState message={error} /> : null}
