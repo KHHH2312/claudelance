@@ -51,8 +51,19 @@ const TOKEN_STYLES: Record<string, string> = {
   usdc: "bg-sky-500/12 text-sky-700 ring-sky-500/25 dark:text-sky-300",
 };
 
+function parseFilter(raw: string | null): FilterValue {
+  if (raw === "cusd" || raw === "celo" || raw === "usdc") return raw;
+  if (raw === "open" || raw === "resolved") return raw;
+  return "all";
+}
+
 export function BountiesFeed() {
-  const [activeFilter, setActiveFilter] = React.useState<FilterValue>("all");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [activeFilter, setActiveFilter] = React.useState<FilterValue>(() =>
+    parseFilter(searchParams?.get("filter") ?? null),
+  );
   const [items, setItems] = React.useState<ApiBounty[]>([]);
   const [nextCursor, setNextCursor] = React.useState<string | null>(null);
   const [total, setTotal] = React.useState<number | null>(null);
