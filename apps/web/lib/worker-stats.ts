@@ -33,21 +33,21 @@ export async function fetchWorkerStats(worker: Address): Promise<WorkerStats> {
     { symbol: "USDC" as const, token: MAINNET.tokens.USDC as Address },
   ];
 
-  const results = await client.multicall({
-    contracts: tokens.map(({ token }) => ({
-      address: deployment.core as Address,
-      abi: CLAUDELANCE_CORE_ABI,
-      functionName: "earnings",
-      args: [worker, token],
-    })),
-    allowFailure: true,
-  });
+  const earnings = await Promise.all(
+    tokens.map(async (entry) => {
+      try {
+        const amount = (await client.readContract({
+          address: deployment.core as Address,
+          abi: CLAUDELANCE_CORE_ABI,
+          functionName: "earnings",
+          args: [worker, entry.token],
+        })) as bigint;
+        return { ...entry, amount };
+      } catch {
+        return { ...entry, amount: 0n };
+      }
+    }),
+  );
 
-  return {
-    earnings: tokens.map((entry, i) => ({
-      ...entry,
-      amount:
-        results[i].status === "success" ? (results[i].result as bigint) : 0n,
-    })),
-  };
+  return { earnings };
 }
