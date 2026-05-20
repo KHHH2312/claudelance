@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Github, Globe } from "lucide-react";
+import { Github, Globe, Mail } from "lucide-react";
 
 import { contractCodeUrl } from "@/lib/celoscan";
 
 const CORE = "0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423";
+const SUPPORT_EMAIL = "yeheskielyunustame13@gmail.com";
 
 export function Footer() {
   return (
@@ -32,6 +33,14 @@ export function Footer() {
           <Link href="/revenue" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Live stats</Link>
           <Link href="/about" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">About</Link>
           <Link href="/docs" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Docs</Link>
+          <Link href="/terms" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Terms</Link>
+          <Link href="/privacy" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Privacy</Link>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="touch-target inline-flex items-center gap-1.5 rounded-full px-3 hover:text-foreground"
+          >
+            <Mail className="h-3.5 w-3.5" /> Support
+          </a>
           <Link
             href={contractCodeUrl(CORE)}
             target="_blank"
