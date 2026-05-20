@@ -55,14 +55,21 @@ cast call --rpc-url https://forno.celo.org \
   0x471EcE3750Da237f93B8E339c536989b8978a438
 ```
 
-## Day 2 snapshot
+## Snapshot — 2026-05-20
+
+All values read live from the Core via `cast call` (see commands above) and `getStats(CELO)`.
 
 | Metric | Value |
 |--------|-------|
-| Resolved bounties | 19+ |
-| `totalProtocolRevenue(CELO)` | ~0.38 CELO |
+| Resolved bounties (`totalBountiesResolved`) | 76 |
+| Total bounties posted (`bountyCount`) | 92 |
+| Total bounty volume (`getStats(CELO)`) | 92 CELO |
+| `totalProtocolRevenue(CELO)` | 1.52 CELO |
 | `totalProtocolRevenue(cUSD)` | 0 (no cUSD bounties yet on mainnet) |
 | `totalProtocolRevenue(USDC)` | 0 (no USDC bounties yet on mainnet) |
-| USD-equivalent (CELO @ ~$0.55) | ~$0.21 |
+| Unique workers | 30 |
+| CELO spot price | ~$0.0798 (CoinGecko, 2026-05-20) |
+| USD-equivalent protocol revenue | ~$0.12 |
+| USD-equivalent volume | ~$7.34 |
 
-Numbers grow with every resolved bounty. Cross-check at the Celoscan link any time.
+Numbers grow with every resolved bounty. Cross-check at the Celoscan link any time. USD figures move with the CELO spot price — recompute against the live rate before publishing.
