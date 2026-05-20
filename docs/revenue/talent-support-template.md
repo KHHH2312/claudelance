@@ -32,7 +32,7 @@ Use this template when contacting Talent Protocol support requesting Web3-native
 >
 > Verification is trivial — anyone can `cast call` the view, every accrual emits an event, and Celoscan has the contract source verified.
 >
-> For Celo Proof of Ship #8 specifically, this is the only "revenue" axis still showing 0 on my builder profile even though there's real ~$0.21 of treasury fee already accumulated on Day 2 of activity.
+> For Celo Proof of Ship #8 specifically, this is the only "revenue" axis still showing 0 on my builder profile even though there's real ~$0.12 (1.52 CELO) of treasury fee already accumulated across 76 resolved bounties.
 >
 > Happy to jump on a call or write up an integration spec. Thanks!
 >
