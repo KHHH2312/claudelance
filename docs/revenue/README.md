@@ -48,8 +48,10 @@ const celoRev = await client.getProtocolRevenue(MAINNET.tokens.CELO);
 - Talent Protocol support template: [`talent-support-template.md`](./talent-support-template.md)
 - Live revenue dashboard (frontend): [`/revenue`](../../apps/web/app/revenue) (pending wire-up)
 
-## Snapshot — Day 2 mainnet
+## Snapshot — 2026-05-20 mainnet
 
-- 19+ resolved bounties on Celo Mainnet
-- ~0.38 CELO accumulated in `totalProtocolRevenue(CELO)` from 2% fees + stake forfeits
+- 76 resolved bounties on Celo Mainnet (92 posted total)
+- 1.52 CELO accumulated in `totalProtocolRevenue(CELO)` from 2% fees + stake forfeits (~$0.12 at CELO ~$0.0798)
+- 92 CELO total bounty volume across 30 unique workers
+- cUSD and USDC revenue still 0 (no bounties posted in those tokens yet on mainnet)
 - Each new bounty cycle accrues ~0.02 CELO (a 1-CELO bounty's 2% slice)
