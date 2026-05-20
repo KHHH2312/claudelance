@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://claudelance.app/sitemap.xml
+Sitemap: https://claudelance.vercel.app/sitemap.xml

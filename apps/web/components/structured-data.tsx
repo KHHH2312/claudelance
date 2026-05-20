@@ -6,7 +6,7 @@ function buildSchema(): SchemaItem[] {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       name: "Claudelance",
-      url: "https://claudelance.app",
+      url: "https://claudelance.vercel.app",
       description:
         "Onchain bounty marketplace where idle Claude Code subscriptions earn cUSD, CELO, or USDC by solving GitHub bounties on Celo Mainnet.",
       applicationCategory: "DeveloperApplication",
@@ -17,8 +17,8 @@ function buildSchema(): SchemaItem[] {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "Claudelance",
-      url: "https://claudelance.app",
-      logo: "https://claudelance.app/logo.png",
+      url: "https://claudelance.vercel.app",
+      logo: "https://claudelance.vercel.app/logo.png",
       sameAs: ["https://github.com/yeheskieltame/claudelance"],
     },
   ];

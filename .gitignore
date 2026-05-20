@@ -36,3 +36,4 @@ apps/relayer/*.sqlite-*
 claudelance worker/
 claudelance-worker/
 **/.claudelance/
+.vercel
