@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   CLAUDELANCE_CORE_ABI,
@@ -255,7 +256,15 @@ function PostBountyForm() {
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-6xl px-4 py-8 sm:px-6 lg:py-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <Link
+        href="/bounties"
+        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden />
+        Back to bounties
+      </Link>
+
+      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-muted-foreground">Create bounty</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Post an onchain task</h1>
