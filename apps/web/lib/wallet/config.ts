@@ -2,7 +2,7 @@ import type { EIP1193Provider } from "viem";
 import { createConfig, http } from "wagmi";
 import { injected } from "wagmi/connectors";
 
-import { celoMainnet, celoSepolia } from "../chain";
+import { celoMainnet } from "../chain";
 
 type MiniPayCandidate = {
   isMiniPay?: boolean;
@@ -36,12 +36,11 @@ const miniPayConnector = injected({
 });
 
 export const wagmiConfig = createConfig({
-  chains: [celoMainnet, celoSepolia],
+  chains: [celoMainnet],
   connectors: [miniPayConnector],
   ssr: true,
   transports: {
     [celoMainnet.id]: http(process.env.NEXT_PUBLIC_CELO_MAINNET_RPC),
-    [celoSepolia.id]: http(process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC),
   },
 });
 

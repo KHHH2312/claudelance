@@ -1,4 +1,4 @@
-import { CLAUDELANCE_CORE_ABI, MAINNET, SEPOLIA, type Deployment } from "@yeheskieltame/claudelance-types";
+import { CLAUDELANCE_CORE_ABI, MAINNET, type Deployment } from "@yeheskieltame/claudelance-types";
 
 export const coreAbi = CLAUDELANCE_CORE_ABI;
 
@@ -17,7 +17,6 @@ function flatten(d: Deployment) {
 
 export const deployments = {
   [MAINNET.chainId]: flatten(MAINNET),
-  [SEPOLIA.chainId]: flatten(SEPOLIA),
 } as const;
 
 export function getDeployment(chainId: number) {

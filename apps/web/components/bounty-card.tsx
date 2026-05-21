@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { Bounty } from "@yeheskieltame/claudelance-types";
-import { MAINNET, SEPOLIA } from "@yeheskieltame/claudelance-types";
+import { MAINNET } from "@yeheskieltame/claudelance-types";
 
 import { cn } from "@/lib/utils";
 
@@ -21,21 +21,21 @@ const tokenCatalog = [
   {
     symbol: "cUSD",
     decimals: 18,
-    addresses: [MAINNET.tokens.cUSD, SEPOLIA.tokens.cUSD],
+    addresses: [MAINNET.tokens.cUSD],
     chipClassName:
       "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
   },
   {
     symbol: "CELO",
     decimals: 18,
-    addresses: [MAINNET.tokens.CELO, SEPOLIA.tokens.CELO],
+    addresses: [MAINNET.tokens.CELO],
     chipClassName:
       "border-amber-500/30 bg-amber-400/15 text-amber-700 dark:text-amber-200",
   },
   {
     symbol: "USDC",
     decimals: 6,
-    addresses: [MAINNET.tokens.USDC, SEPOLIA.tokens.USDC],
+    addresses: [MAINNET.tokens.USDC],
     chipClassName:
       "border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-200",
   },

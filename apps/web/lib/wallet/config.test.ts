@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { celoMainnet, celoSepolia } from "../chain";
+import { celoMainnet } from "../chain";
 import { connectorResolutionOrder, isMiniPay, resolveConnector, wagmiConfig } from "./config";
 
 test("B39 connector resolution keeps MiniPay before Privy fallback", () => {
@@ -12,9 +12,9 @@ test("B39 connector resolution keeps MiniPay before Privy fallback", () => {
   assert.equal(resolveConnector({ request: async () => [] }), "privy");
 });
 
-test("B39 wagmi config supports Celo mainnet and Celo Sepolia", () => {
+test("wagmi config targets Celo mainnet only", () => {
   assert.deepEqual(
     wagmiConfig.chains.map((chain) => chain.id),
-    [celoMainnet.id, celoSepolia.id],
+    [celoMainnet.id],
   );
 });

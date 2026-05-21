@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createPublicClient, http, type Address } from "viem";
-import { MAINNET, SEPOLIA, type Deployment } from "@yeheskieltame/claudelance-types";
+import { MAINNET, type Deployment } from "@yeheskieltame/claudelance-types";
 
-import { celoMainnet, celoSepolia } from "@/lib/chain";
+import { celoMainnet } from "@/lib/chain";
 
 export const revalidate = 30;
 
@@ -122,7 +122,7 @@ export async function GET(_request: Request, { params }: { params: Params }) {
 
   const deployment = getActiveDeployment();
   const client = createPublicClient({
-    chain: deployment.chainId === MAINNET.chainId ? celoMainnet : celoSepolia,
+    chain: celoMainnet,
     transport: http(getRpcOverride(deployment.chainId)),
   });
 
@@ -199,12 +199,11 @@ function parseBountyId(value: string) {
 }
 
 function getActiveDeployment(): Deployment {
-  return process.env.NEXT_PUBLIC_DEFAULT_CHAIN === "celo-mainnet" ? MAINNET : SEPOLIA;
+  return MAINNET;
 }
 
-function getRpcOverride(chainId: number) {
-  if (chainId === MAINNET.chainId) return process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
-  return process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC;
+function getRpcOverride(_chainId: number) {
+  return process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
 }
 
 function toJsonBounty(id: bigint, bounty: ChainBounty) {
