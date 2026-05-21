@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider } from "wagmi";
 
+import { MiniPayAutoConnect } from "@/components/minipay-auto-connect";
 import { TransactionToast } from "@/components/transaction-toast";
 import { wagmiConfig } from "@/lib/wallet/config";
 
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const app = (
     <QueryClientProvider client={queryClient}>
       <WagmiProvider config={wagmiConfig}>
+        <MiniPayAutoConnect />
         {children}
         <TransactionToast />
       </WagmiProvider>

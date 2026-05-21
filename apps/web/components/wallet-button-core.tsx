@@ -96,6 +96,10 @@ export function WalletButtonCore({
     longPressRef.current = null;
   }
 
+  // Inside MiniPay the wallet is implicit and auto-connected, so suppress the
+  // connect affordance entirely until a session exists.
+  if (miniPayActive && !connected) return null;
+
   return (
     <Button
       type="button"

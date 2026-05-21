@@ -9,7 +9,7 @@ import {
   Loader2,
   Search,
 } from "lucide-react";
-import { MAINNET, SEPOLIA, ZERO_ADDRESS } from "@yeheskieltame/claudelance-types";
+import { MAINNET, ZERO_ADDRESS } from "@yeheskieltame/claudelance-types";
 
 import { Button } from "@/components/ui/button";
 import { TOKEN_BADGE, type TokenSymbol } from "@/lib/token-theme";
@@ -54,9 +54,8 @@ const TOKEN_FILTERS: Array<{ value: TokenFilter; label: string }> = [
 
 const STATUS_LABELS = ["Open", "Resolved", "Cancelled", "Expired"] as const;
 
-// Resolve token addresses for the active deployment so symbol/decimals are
-// correct on both mainnet and the Sepolia dev chain.
-const DEPLOYMENT = process.env.NEXT_PUBLIC_DEFAULT_CHAIN === "celo-mainnet" ? MAINNET : SEPOLIA;
+// Resolve token addresses for the mainnet deployment so symbol/decimals are correct.
+const DEPLOYMENT = MAINNET;
 
 function symbolForAddress(address: string): TokenSymbol | null {
   const a = address.toLowerCase();

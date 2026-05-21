@@ -1,6 +1,6 @@
 import { createPublicClient, http } from "viem";
 
-import { celoSepolia, DEFAULT_CHAIN_ID, chainById } from "./chain";
+import { DEFAULT_CHAIN_ID, chainById } from "./chain";
 import { coreAbi, getDeployment } from "./contracts";
 import { getCeloUsdPrice, tokenToCeloWei } from "./price";
 
@@ -26,7 +26,6 @@ export type LiveStats = {
 };
 
 const rpcOverrides: Partial<Record<number, string>> = {
-  [celoSepolia.id]: process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC,
   42_220: process.env.NEXT_PUBLIC_CELO_MAINNET_RPC,
 };
 

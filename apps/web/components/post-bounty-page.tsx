@@ -3,12 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  CLAUDELANCE_CORE_ABI,
-  MAINNET,
-  SEPOLIA,
-  deploymentByChainId,
-} from "@yeheskieltame/claudelance-types";
+import { CLAUDELANCE_CORE_ABI, MAINNET } from "@yeheskieltame/claudelance-types";
 import {
   ArrowLeft,
   ArrowRight,
@@ -39,7 +34,8 @@ import { Button } from "@/components/ui/button";
 import { MiniPayBadge } from "@/components/minipay-badge";
 import { MiniPayBalanceCard } from "@/components/minipay-balance-card";
 import { useTransactionToast } from "@/components/transaction-toast";
-import { celoMainnet, celoSepolia, DEFAULT_CHAIN_ID, supportedChains } from "@/lib/chain";
+import { celoMainnet, supportedChains } from "@/lib/chain";
+import { isMiniPay } from "@/lib/wallet/config";
 import { cn } from "@/lib/utils";
 
 type TokenSymbol = "cUSD" | "CELO" | "USDC";
@@ -64,7 +60,6 @@ const wagmiConfig = createConfig({
   connectors: [injected({ shimDisconnect: true })],
   ssr: true,
   transports: {
-    [celoSepolia.id]: http(process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC),
     [celoMainnet.id]: http(process.env.NEXT_PUBLIC_CELO_MAINNET_RPC),
   },
 });
@@ -144,13 +139,26 @@ export function PostBountyPage() {
 }
 
 function PostBountyForm() {
-  const deployment = deploymentByChainId(DEFAULT_CHAIN_ID) ?? SEPOLIA;
-  const writeChainId = deployment.chainId as typeof celoSepolia.id | typeof celoMainnet.id;
+  const deployment = MAINNET;
+  const writeChainId = celoMainnet.id;
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending: isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
   const { writeContractAsync, isPending: isWriting } = useWriteContract();
+  const [miniPayActive, setMiniPayActive] = React.useState(false);
   const [step, setStep] = React.useState(0);
+
+  // MiniPay auto-connects: detect the in-app browser, connect eagerly, and hide
+  // the manual connect affordance.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const active = isMiniPay(window.ethereum);
+    setMiniPayActive(active);
+    if (active && !isConnected) {
+      const connector = connectors[0];
+      if (connector) connect({ connector });
+    }
+  }, [connect, connectors, isConnected]);
   const [values, setValues] = React.useState<FormState>(initialState);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [txHash, setTxHash] = React.useState<Hash | null>(null);
@@ -277,6 +285,7 @@ function PostBountyForm() {
           chainName={deployment.chainName}
           isConnected={isConnected}
           isConnecting={isConnecting}
+          hideConnect={miniPayActive}
           onConnect={connectInjected}
           onDisconnect={() => disconnect()}
         />
@@ -374,6 +383,7 @@ function WalletStrip({
   chainName,
   isConnected,
   isConnecting,
+  hideConnect,
   onConnect,
   onDisconnect,
 }: {
@@ -381,6 +391,7 @@ function WalletStrip({
   chainName: string;
   isConnected: boolean;
   isConnecting: boolean;
+  hideConnect: boolean;
   onConnect: () => void;
   onDisconnect: () => void;
 }) {
@@ -395,6 +406,8 @@ function WalletStrip({
             Disconnect
           </button>
         </>
+      ) : hideConnect ? (
+        <span className="text-xs font-medium text-muted-foreground">MiniPay</span>
       ) : (
         <Button size="sm" onClick={onConnect} disabled={isConnecting}>
           {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Wallet className="h-4 w-4" aria-hidden />}
@@ -696,7 +709,7 @@ function flattenZodErrors(result: z.SafeParseReturnType<unknown, unknown>) {
   }, {});
 }
 
-function parseForm(values: FormState, deployment: typeof MAINNET | typeof SEPOLIA) {
+function parseForm(values: FormState, deployment: typeof MAINNET) {
   try {
     const token = tokenConfig(values.token, deployment);
     const amount = parseUnits(values.amount, token.decimals);
@@ -719,7 +732,7 @@ function parseForm(values: FormState, deployment: typeof MAINNET | typeof SEPOLI
   }
 }
 
-function tokenConfig(symbol: TokenSymbol, deployment: typeof MAINNET | typeof SEPOLIA) {
+function tokenConfig(symbol: TokenSymbol, deployment: typeof MAINNET) {
   const address = deployment.tokens[symbol] as Address;
   return {
     address,
