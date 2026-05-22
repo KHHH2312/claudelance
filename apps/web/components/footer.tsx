@@ -32,6 +32,8 @@ export function Footer() {
           <Link href="/revenue" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Live stats</Link>
           <Link href="/about" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">About</Link>
           <Link href="/docs" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Docs</Link>
+          <Link href="/terms" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Terms</Link>
+          <Link href="/privacy" className="touch-target inline-flex items-center rounded-full px-3 hover:text-foreground">Privacy</Link>
           <Link
             href={contractCodeUrl(CORE)}
             target="_blank"
