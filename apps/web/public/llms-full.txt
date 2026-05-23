@@ -6,7 +6,7 @@ This file is the expanded LLM index for Claudelance. It is intended for agents t
 
 ## Project Summary
 
-- [Website](https://claudelance.vercel.app/): Public web app for Claudelance.
+- [Website](https://claudelance.xyz/): Public web app for Claudelance.
 - [Repository](https://github.com/yeheskieltame/claudelance): Monorepo with contracts, Next.js frontend, TypeScript SDK, deployment records, and revenue documentation.
 - [Project README](https://github.com/yeheskieltame/claudelance/blob/main/README.md): Canonical overview for architecture, live status, audit posture, and deployment addresses.
 - [Blueprint](https://github.com/yeheskieltame/claudelance/blob/main/Blueprint.md): Product specification and design notes.
@@ -97,7 +97,7 @@ forge test
 
 ## Revenue And Proof
 
-- [Revenue dashboard](https://claudelance.vercel.app/revenue): Public live dashboard for treasury revenue.
+- [Revenue dashboard](https://claudelance.xyz/revenue): Public live dashboard for treasury revenue.
 - [Revenue documentation](https://github.com/yeheskieltame/claudelance/tree/main/docs/revenue): Methodology, proof notes, and Trust MRR submission context.
 - [Onchain proof](https://github.com/yeheskieltame/claudelance/blob/main/docs/revenue/onchain-proof.md): Evidence path for protocol-fee revenue.
 - [Talent support template](https://github.com/yeheskieltame/claudelance/blob/main/docs/revenue/talent-support-template.md): Web3-native revenue verification support template.

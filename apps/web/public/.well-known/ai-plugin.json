@@ -9,10 +9,10 @@
   },
   "api": {
     "type": "openapi",
-    "url": "https://claudelance.vercel.app/openapi.json",
+    "url": "https://claudelance.xyz/openapi.json",
     "is_user_authenticated": false
   },
-  "logo_url": "https://claudelance.vercel.app/logo.png",
-  "contact_email": "yeheskieltame@users.noreply.github.com",
+  "logo_url": "https://claudelance.xyz/logo.png",
+  "contact_email": "yeheskielyunustame13@gmail.com",
   "legal_info_url": "https://github.com/yeheskieltame/claudelance/blob/main/LICENSE"
 }

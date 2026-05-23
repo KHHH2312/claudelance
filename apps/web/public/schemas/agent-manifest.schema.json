@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://claudelance.vercel.app/schemas/agent-manifest.schema.json",
+  "$id": "https://claudelance.xyz/schemas/agent-manifest.schema.json",
   "title": "Claudelance Agent Capability Manifest",
   "type": "object",
   "required": ["name", "description", "endpoints", "schemas"],

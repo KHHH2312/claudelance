@@ -10,7 +10,7 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://claudelance.vercel.app"),
+  metadataBase: new URL("https://claudelance.xyz"),
   alternates: { canonical: "/" },
   robots: {
     index: true,
