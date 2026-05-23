@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowUpRight, ChevronLeft, ChevronRight, ExternalLink, Search } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight, ExternalLink, Search, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { addressUrl } from "@/lib/celoscan";
@@ -13,6 +13,7 @@ export type WorkerRow = {
   address: string;
   wins: number;
   payout: string;
+  hasIdentity: boolean;
 };
 
 const PAGE_SIZE = 10;
@@ -70,8 +71,9 @@ export function WorkersTable({ rows }: { rows: WorkerRow[] }) {
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th scope="col" className="px-4 py-3 font-medium">#</th>
                   <th scope="col" className="px-4 py-3 font-medium">Worker</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Identity</th>
                   <th scope="col" className="px-4 py-3 text-right font-medium">Wins</th>
-                  <th scope="col" className="px-4 py-3 text-right font-medium">CELO earned</th>
+                  <th scope="col" className="px-4 py-3 text-right font-medium">Earned</th>
                   <th scope="col" className="px-4 py-3 text-right font-medium">On-chain</th>
                 </tr>
               </thead>
@@ -94,6 +96,19 @@ export function WorkersTable({ rows }: { rows: WorkerRow[] }) {
                         {shortAddress(row.address)}
                         <ArrowUpRight aria-hidden className="h-3.5 w-3.5" />
                       </Link>
+                    </td>
+                    <td className="px-4 py-3">
+                      {row.hasIdentity ? (
+                        <span
+                          title="ERC-8004 Agent Identity verified"
+                          className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-300"
+                        >
+                          <ShieldCheck aria-hidden className="h-3 w-3" />
+                          ERC-8004
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">{row.wins}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{row.payout}</td>

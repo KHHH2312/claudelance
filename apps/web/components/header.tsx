@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { WalletButton } from "@/components/wallet-button";
@@ -31,9 +31,14 @@ export function Header() {
     <header className="sticky top-4 z-40 mx-auto w-full max-w-6xl px-4">
       <nav className="glass flex h-14 items-center justify-between rounded-full px-4 sm:h-16 sm:px-6">
         <Link href="/" className="touch-target -ml-2 inline-flex items-center gap-2 rounded-full px-2">
-          <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-glow">
-            <Sparkles className="h-4 w-4" />
-          </span>
+          <Image
+            src="/logo.webp"
+            alt="Claudelance"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-full object-cover"
+            priority
+          />
           <span className="hidden text-sm font-semibold tracking-tight sm:inline">
             Claudelance
           </span>

@@ -1,6 +1,6 @@
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, User, Trophy, Clock, Coins, Shield, Layers } from "lucide-react";
 import Link from "next/link";
 import { MAINNET } from "@yeheskieltame/claudelance-types";
 
@@ -8,6 +8,8 @@ import { Header } from "@/components/header";
 import { BountyDetailClient } from "@/components/bounty-detail";
 import { GlassCard } from "@/components/ui/card";
 import { formatTokenAmount } from "@/lib/format-token";
+import { shortAddress } from "@/lib/utils";
+import { txUrl } from "@/lib/celoscan";
 
 type Params = Promise<{ id: string }>;
 
@@ -104,6 +106,8 @@ function BountyHeader({ bounty }: { bounty: BountyJson }) {
   const token = normalizeTokenSymbol(bounty.token);
   const nowSeconds = Math.floor(Date.now() / 1000);
   const isPastDeadline = Number(bounty.deadline) <= nowSeconds;
+  const isDirectHire =
+    bounty.targetWorker !== "0x0000000000000000000000000000000000000000";
   const statusLabel =
     bounty.status === 1
       ? "Resolved"
@@ -114,68 +118,159 @@ function BountyHeader({ bounty }: { bounty: BountyJson }) {
           : "Open";
   const statusColor =
     statusLabel === "Resolved"
-      ? "bg-emerald-500/12 text-emerald-600 dark:text-emerald-300"
+      ? "bg-emerald-500/12 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20"
       : statusLabel === "Open"
-        ? "bg-primary/10 text-primary"
-        : "bg-muted text-muted-foreground";
+        ? "bg-primary/10 text-primary border border-primary/20"
+        : "bg-muted text-muted-foreground border border-border";
+
+  const repoTitle = bounty.targetRepoUrl
+    ? bounty.targetRepoUrl
+        .replace(/^https?:\/\/github\.com\//, "")
+        .replace(/\/issues\/\d+$/, "")
+    : `Bounty #${bounty.id}`;
+
+  const deadlineDate = formatDeadlineFull(bounty.deadline);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">
+    <div className="flex flex-col gap-5">
+      {/* Badges row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-semibold text-muted-foreground">
           #{bounty.id}
         </span>
-        <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusColor}`}>
           {statusLabel}
         </span>
-        {bounty.ciRequired ? (
-          <span className="rounded-full bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-600 dark:text-amber-300">
+        {isDirectHire && (
+          <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-600 dark:text-violet-300">
+            Direct hire
+          </span>
+        )}
+        {bounty.ciRequired && (
+          <span className="rounded-full border border-amber-500/20 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-300">
             CI required
           </span>
-        ) : null}
+        )}
       </div>
 
-      <h1 className="text-balance font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-        {bounty.targetRepoUrl
-          ? bounty.targetRepoUrl
-              .replace(/^https?:\/\/github\.com\//, "")
-              .replace(/\/issues\/\d+$/, "")
-          : `Bounty #${bounty.id}`}
-      </h1>
-
-      {bounty.instructionUrl && (
-        <a
-          href={bounty.instructionUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          View on GitHub
-        </a>
-      )}
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat label="Reward" value={`${formatToken(bounty.amount, bounty.token)} ${token}`} />
-        <Stat label="Stake" value={`${formatToken(bounty.stakeRequired, bounty.token)} ${token}`} />
-        <Stat
-          label="Slots"
-          value={`${bounty.claimedSlots}/${bounty.maxSlots}`}
-        />
-        <Stat label="Deadline" value={formatDeadline(bounty.deadline)} />
+      {/* Title */}
+      <div>
+        <h1 className="text-balance font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+          {repoTitle}
+        </h1>
+        {bounty.instructionUrl && (
+          <a
+            href={bounty.instructionUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            View issue / spec on GitHub
+          </a>
+        )}
       </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard icon={<Coins className="h-4 w-4" />} label="Reward" value={`${formatToken(bounty.amount, bounty.token)} ${token}`} highlight />
+        <StatCard icon={<Shield className="h-4 w-4" />} label="Stake" value={`${formatToken(bounty.stakeRequired, bounty.token)} ${token}`} />
+        <StatCard icon={<Layers className="h-4 w-4" />} label="Slots" value={`${bounty.claimedSlots} / ${bounty.maxSlots}`} />
+        <StatCard icon={<Clock className="h-4 w-4" />} label="Deadline" value={deadlineDate} />
+      </div>
+
+      {/* Meta info panel */}
+      <GlassCard className="!p-4 !rounded-2xl">
+        <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+          <MetaRow icon={<User className="h-3.5 w-3.5" />} label="Poster">
+            <a
+              href={`https://celoscan.io/address/${bounty.poster}`}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-xs hover:text-primary transition-colors"
+            >
+              {shortAddress(bounty.poster)}
+            </a>
+          </MetaRow>
+
+          {bounty.status === 1 &&
+            bounty.winner !== "0x0000000000000000000000000000000000000000" && (
+              <MetaRow icon={<Trophy className="h-3.5 w-3.5 text-emerald-500" />} label="Winner">
+                <Link
+                  href={`/worker/${bounty.winner.toLowerCase()}`}
+                  className="font-mono text-xs text-emerald-600 hover:text-emerald-500 dark:text-emerald-300 transition-colors"
+                >
+                  {shortAddress(bounty.winner)}
+                </Link>
+              </MetaRow>
+            )}
+
+          {isDirectHire && (
+            <MetaRow icon={<User className="h-3.5 w-3.5 text-violet-500" />} label="Targeted worker">
+              <Link
+                href={`/worker/${bounty.targetWorker.toLowerCase()}`}
+                className="font-mono text-xs text-violet-600 hover:text-violet-500 dark:text-violet-300 transition-colors"
+              >
+                {shortAddress(bounty.targetWorker)}
+              </Link>
+            </MetaRow>
+          )}
+
+          <MetaRow icon={<ExternalLink className="h-3.5 w-3.5" />} label="On-chain">
+            <a
+              href={`https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#readContract`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ClaudelanceCore · bountyId {bounty.id}
+            </a>
+          </MetaRow>
+        </dl>
+      </GlassCard>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function StatCard({
+  icon,
+  label,
+  value,
+  highlight,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
   return (
     <GlassCard className="!p-4 !rounded-2xl">
-      <p className="text-xs uppercase tracking-wider text-muted-foreground">
+      <div className={`flex items-center gap-1.5 text-xs uppercase tracking-wider ${highlight ? "text-primary" : "text-muted-foreground"}`}>
+        {icon}
         {label}
+      </div>
+      <p className={`mt-1.5 text-base font-semibold tracking-tight ${highlight ? "text-primary" : ""}`}>
+        {value}
       </p>
-      <p className="mt-1 text-lg font-semibold tracking-tight">{value}</p>
     </GlassCard>
+  );
+}
+
+function MetaRow({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex-shrink-0 text-muted-foreground">{icon}</span>
+      <dt className="w-28 flex-shrink-0 text-xs text-muted-foreground">{label}</dt>
+      <dd>{children}</dd>
+    </div>
   );
 }
 
@@ -209,4 +304,16 @@ function formatDeadline(deadline: string) {
   if (days <= 0) return "Expired";
   if (days === 1) return "1 day left";
   return `${days} days left`;
+}
+
+function formatDeadlineFull(deadline: string) {
+  const d = Number(deadline);
+  const date = new Date(d < 10_000_000_000 ? d * 1000 : d);
+  if (Number.isNaN(date.getTime())) return "—";
+  const diff = date.getTime() - Date.now();
+  const days = Math.ceil(diff / 86_400_000);
+  const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  if (days <= 0) return `${dateStr} · Expired`;
+  if (days === 1) return `${dateStr} · 1 day left`;
+  return `${dateStr} · ${days}d left`;
 }

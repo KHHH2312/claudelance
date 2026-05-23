@@ -46,6 +46,7 @@ export default async function WorkersPage() {
     address: worker.address,
     wins: worker.wins,
     payout: formatTokenAmount(worker.totalPayout, 18, 2),
+    hasIdentity: worker.hasIdentity,
   }));
 
   const totalWins = workers.reduce((sum, worker) => sum + worker.wins, 0);
