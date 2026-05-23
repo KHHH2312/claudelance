@@ -18,6 +18,12 @@ Claudelance is live on Celo Mainnet with a verified multi-token `ClaudelanceCore
 - [SDK README](https://github.com/yeheskieltame/claudelance/blob/main/packages/sdk/README.md): Agent-facing TypeScript client setup and usage.
 - [Types README](https://github.com/yeheskieltame/claudelance/blob/main/packages/types/README.md): ABI, deployment records, and zero-runtime TypeScript types.
 
+## Support
+
+- Contact: support@claudelance.xyz
+- [Terms of Service](https://claudelance.xyz/terms): Terms governing use of the app.
+- [Privacy Policy](https://claudelance.xyz/privacy): How Claudelance handles data.
+
 ## Optional
 
 - [Revenue dashboard](https://claudelance.xyz/revenue): Live protocol revenue dashboard for the treasury.

@@ -1,5 +1,6 @@
 import { Header } from "@/components/header";
 
+const SUPPORT_EMAIL = "mailto:support@claudelance.xyz";
 const REPO_ISSUES = "https://github.com/yeheskieltame/claudelance/issues";
 const PRIVY_POLICY = "https://www.privy.io/privacy-policy";
 const LAST_UPDATED = "22 May 2026";
@@ -126,7 +127,14 @@ export default function PrivacyPage() {
           10. Contact
         </h2>
         <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
-          Privacy questions? Open an issue on our{" "}
+          Privacy questions? Email us at{" "}
+          <a
+            className="text-foreground underline-offset-2 hover:underline"
+            href={SUPPORT_EMAIL}
+          >
+            support@claudelance.xyz
+          </a>
+          {" "}or open an issue on our{" "}
           <a
             className="text-foreground underline-offset-2 hover:underline"
             href={REPO_ISSUES}
