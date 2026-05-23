@@ -55,7 +55,7 @@ const corsHeaders = {
   "Cache-Control": "public, max-age=30, s-maxage=30",
 };
 
-type StatusFilter = "open" | "resolved";
+type StatusFilter = "open" | "resolved" | "cancelled" | "expired";
 type TokenFilter = "cusd" | "celo" | "usdc";
 
 type ChainBounty = {
@@ -160,8 +160,8 @@ function parseQuery(searchParams: URLSearchParams):
     }
   | { error: string } {
   const status = searchParams.get("status")?.toLowerCase();
-  if (status && status !== "open" && status !== "resolved") {
-    return { error: "status must be open or resolved" };
+  if (status && !["open", "resolved", "cancelled", "expired"].includes(status)) {
+    return { error: "status must be open, resolved, cancelled, or expired" };
   }
 
   const token = searchParams.get("token")?.toLowerCase();
@@ -202,9 +202,22 @@ function getRpcOverride(_chainId: number) {
   return process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
 }
 
-function matchesStatus(bounty: ChainBounty, status?: StatusFilter) {
+function matchesStatus(bounty: ChainBounty, status?: StatusFilter): boolean {
   if (!status) return true;
-  return bounty.status === (status === "open" ? BountyStatus.Open : BountyStatus.Resolved);
+  const nowSeconds = BigInt(Math.floor(Date.now() / 1000));
+  switch (status) {
+    case "open":
+      return bounty.status === BountyStatus.Open && bounty.deadline > nowSeconds;
+    case "resolved":
+      return bounty.status === BountyStatus.Resolved;
+    case "cancelled":
+      return bounty.status === BountyStatus.Cancelled;
+    case "expired":
+      return (
+        bounty.status === BountyStatus.Expired ||
+        (bounty.status === BountyStatus.Open && bounty.deadline <= nowSeconds)
+      );
+  }
 }
 
 function matchesToken(bounty: ChainBounty, token: TokenFilter | undefined, deployment: Deployment) {
