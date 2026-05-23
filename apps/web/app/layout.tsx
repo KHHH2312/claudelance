@@ -50,6 +50,10 @@ export const metadata: Metadata = {
     description: "Got Claude Code? Earn while it sleeps.",
     images: ["/logo.png"],
   },
+  other: {
+    "talentapp:project_verification":
+      "a316a9933742430ff8782c30c281df73fafb3b581d10b11eae636498e080c0ed41bbc3f2a2981548018141dceac5eb2d9bb7906b7121e7f80f2b8582e859b65b",
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
