@@ -3,7 +3,7 @@ import { ArrowUpRight, Sparkles } from "lucide-react";
 import { GlassCard } from "@/components/ui/card";
 import { txUrl } from "@/lib/celoscan";
 import { fetchRecentResolved } from "@/lib/recent-bounties";
-import { formatCELO } from "@/lib/format-token";
+import { formatTokenAmount } from "@/lib/format-token";
 import { shortAddress } from "@/lib/utils";
 
 export async function RecentActivityFeed() {
@@ -31,7 +31,7 @@ export async function RecentActivityFeed() {
                   Bounty #{row.bountyId.toString()} resolved
                 </p>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  Winner {shortAddress(row.winner)} · {formatCELO(row.winnerPayout)} CELO
+                  Winner {shortAddress(row.winner)} · {formatTokenAmount(row.winnerPayout, row.tokenDecimals)} {row.tokenSymbol}
                 </p>
               </div>
               <a

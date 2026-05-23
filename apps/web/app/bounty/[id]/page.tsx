@@ -2,10 +2,12 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { MAINNET } from "@yeheskieltame/claudelance-types";
 
 import { Header } from "@/components/header";
 import { BountyDetailClient } from "@/components/bounty-detail";
 import { GlassCard } from "@/components/ui/card";
+import { formatTokenAmount } from "@/lib/format-token";
 
 type Params = Promise<{ id: string }>;
 
@@ -154,8 +156,8 @@ function BountyHeader({ bounty }: { bounty: BountyJson }) {
       )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat label="Reward" value={`${formatToken(bounty.amount)} ${token}`} />
-        <Stat label="Stake" value={`${formatToken(bounty.stakeRequired)} CELO`} />
+        <Stat label="Reward" value={`${formatToken(bounty.amount, bounty.token)} ${token}`} />
+        <Stat label="Stake" value={`${formatToken(bounty.stakeRequired, bounty.token)} ${token}`} />
         <Stat
           label="Slots"
           value={`${bounty.claimedSlots}/${bounty.maxSlots}`}
@@ -188,10 +190,14 @@ function normalizeTokenSymbol(token: string) {
   );
 }
 
-function formatToken(wei: string) {
-  const n = Number(wei);
-  if (n > 1e18) return (n / 1e18).toFixed(2);
-  return n.toString();
+function formatToken(raw: string, tokenAddress: string): string {
+  const decimals =
+    tokenAddress.toLowerCase() === MAINNET.tokens.USDC.toLowerCase() ? 6 : 18;
+  try {
+    return formatTokenAmount(BigInt(raw), decimals, 2);
+  } catch {
+    return "0";
+  }
 }
 
 function formatDeadline(deadline: string) {
