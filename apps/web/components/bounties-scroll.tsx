@@ -1,7 +1,9 @@
 import { ArrowRight, CalendarClock, Coins } from "lucide-react";
 import Link from "next/link";
+import { MAINNET } from "@yeheskieltame/claudelance-types";
 
 import { Button } from "@/components/ui/button";
+import { formatTokenAmount } from "@/lib/format-token";
 
 const TOKEN_STYLES: Record<string, string> = {
   cusd: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
@@ -83,11 +85,11 @@ export async function BountiesScroll() {
 }
 
 function BountyMiniCard({ bounty }: { bounty: ApiBounty }) {
-  const token = normalizeToken(bounty);
+  const { symbol: token, decimals } = resolveToken(bounty.token ?? "");
   const tokenStyle =
     TOKEN_STYLES[token.toLowerCase()] ??
     "border-border bg-muted text-muted-foreground";
-  const amount = formatAmount(bounty.amount);
+  const amount = formatAmount(bounty.amount, decimals);
   const deadline = formatDeadline(bounty.deadline);
   const title =
     bounty.title ?? deriveTitle(bounty);
@@ -134,27 +136,21 @@ function BountyMiniCard({ bounty }: { bounty: ApiBounty }) {
   );
 }
 
-function normalizeToken(bounty: ApiBounty) {
-  const symbol = bounty.tokenSymbol ?? bounty.token ?? "cUSD";
-  const normalized = symbol
-    .toString()
-    .replace(/^0x[a-f0-9]+$/i, "cUSD")
-    .toLowerCase();
-  if (normalized === "cusd") return "cUSD";
-  if (normalized === "celo") return "CELO";
-  if (normalized === "usdc") return "USDC";
-  return symbol.toString();
+function resolveToken(address: string): { symbol: string; decimals: number } {
+  const a = address.toLowerCase();
+  if (a === MAINNET.tokens.USDC.toLowerCase()) return { symbol: "USDC", decimals: 6 };
+  if (a === MAINNET.tokens.cUSD.toLowerCase()) return { symbol: "cUSD", decimals: 18 };
+  if (a === MAINNET.tokens.CELO.toLowerCase()) return { symbol: "CELO", decimals: 18 };
+  return { symbol: "cUSD", decimals: 18 };
 }
 
-function formatAmount(amount: ApiBounty["amount"]) {
+function formatAmount(amount: ApiBounty["amount"], decimals: number): string {
   if (amount === undefined || amount === null || amount === "") return "0";
-  const numeric = Number(amount);
-  if (!Number.isFinite(numeric)) return String(amount);
-  if (numeric > 1_000_000)
-    return (numeric / 1e18).toLocaleString(undefined, {
-      maximumFractionDigits: 2,
-    });
-  return numeric.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  try {
+    return formatTokenAmount(BigInt(String(amount)), decimals, 2);
+  } catch {
+    return "0";
+  }
 }
 
 function formatDeadline(deadline: ApiBounty["deadline"]) {
