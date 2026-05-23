@@ -4,7 +4,7 @@ Working reference for submitting Claudelance to the MiniPay Discover page.
 
 - Submission form: <https://developer.minipay.to/mini-app-listing>
 - Docs: <https://docs.minipay.xyz/getting-started/submit-your-miniapp.html>
-- Production app: <https://claudelance.vercel.app> (Celo Mainnet, chain 42220)
+- Production app: <https://claudelance.xyz> (Celo Mainnet, chain 42220)
 
 ## Status
 
@@ -34,11 +34,11 @@ Working reference for submitting Claudelance to the MiniPay Discover page.
 | Tagline (alt) | Got Claude Code? Earn cUSD, CELO, or USDC while it sleeps — onchain on Celo. |
 | Publisher | Claudelance (yeheskieltame) |
 | Category | developer-tools (alt: finance) |
-| App URL | https://claudelance.vercel.app |
-| Icon (512x512) | https://claudelance.vercel.app/icon-512.png |
+| App URL | https://claudelance.xyz |
+| Icon (512x512) | https://claudelance.xyz/icon-512.png |
 | Support URL | https://github.com/yeheskieltame/claudelance/issues |
-| Terms of Service | https://claudelance.vercel.app/terms |
-| Privacy Policy | https://claudelance.vercel.app/privacy |
+| Terms of Service | https://claudelance.xyz/terms |
+| Privacy Policy | https://claudelance.xyz/privacy |
 
 ## 2. Technical prerequisites
 
@@ -53,7 +53,7 @@ Working reference for submitting Claudelance to the MiniPay Discover page.
 
 Origins the app connects to at runtime (allow-list these):
 
-- `https://claudelance.vercel.app` — app origin and same-origin API routes: `/api/bounties`, `/api/bounty/[id]`, `/api/stats`, `/api/worker/[address]`, `/api/swarm`, `/api/health`, `/api/agent/manifest`
+- `https://claudelance.xyz` — app origin and same-origin API routes: `/api/bounties`, `/api/bounty/[id]`, `/api/stats`, `/api/worker/[address]`, `/api/swarm`, `/api/health`, `/api/agent/manifest`
 - `https://forno.celo.org` — Celo Mainnet JSON-RPC (all chain reads and transaction broadcast)
 - `https://api.coingecko.com` — CELO/USD price (server-side, `apps/web/lib/price.ts`)
 - `https://auth.privy.io` and `*.privy.io` — optional Privy sign-in (only when a user logs in with GitHub, email, or an external wallet)
@@ -95,7 +95,7 @@ Not user-facing:
 
 ## 5. Pending (manual)
 
-- **PageSpeed Insights** — run <https://pagespeed.web.dev/?url=https://claudelance.vercel.app>, record the Mobile score.
+- **PageSpeed Insights** — run <https://pagespeed.web.dev/?url=https://claudelance.xyz>, record the Mobile score.
 - **Screenshots** — capture from MiniPay (landing, bounties list, bounty detail, post flow).
 
 ## 6. Testing inside MiniPay (dev mode)
@@ -103,7 +103,7 @@ Not user-facing:
 1. MiniPay > Settings > About > tap Version repeatedly until confirmed.
 2. Settings > Developer Settings > enable Developer Mode.
 3. Keep Use Testnet OFF (the app is mainnet-only).
-4. Load Test Page > enter `https://claudelance.vercel.app` > Go.
+4. Load Test Page > enter `https://claudelance.xyz` > Go.
 
 ## 7. Review flow
 

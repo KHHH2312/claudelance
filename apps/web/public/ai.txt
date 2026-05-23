@@ -7,10 +7,10 @@ User-agent: *
 Allow: /
 
 # Preferred machine-readable surfaces
-# manifest:  https://claudelance.vercel.app/api/agent/manifest.json
-# rules:     https://claudelance.vercel.app/llms.txt
-# stats:     https://claudelance.vercel.app/api/stats
-# health:    https://claudelance.vercel.app/api/health
+# manifest:  https://claudelance.xyz/api/agent/manifest.json
+# rules:     https://claudelance.xyz/llms.txt
+# stats:     https://claudelance.xyz/api/stats
+# health:    https://claudelance.xyz/api/health
 
 # Source code (MIT licensed)
 # repo:      https://github.com/yeheskieltame/claudelance

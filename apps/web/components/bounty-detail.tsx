@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircle2, ExternalLink, Loader2, ShieldCheck, Upload } from "lucide-react";
 import {
   CLAUDELANCE_CORE_ABI,
+  MAINNET,
   deploymentByChainId,
 } from "@yeheskieltame/claudelance-types";
 import type { Address, Hash } from "viem";
@@ -14,6 +15,7 @@ import { GlassCard } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTransactionToast } from "@/components/transaction-toast";
 import { DEFAULT_CHAIN_ID } from "@/lib/chain";
+import { formatTokenAmount } from "@/lib/format-token";
 import { cn, shortAddress } from "@/lib/utils";
 
 type Submission = {
@@ -153,6 +155,7 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
           claimedSlots={bounty.claimedSlots}
           maxSlots={bounty.maxSlots}
           stakeRequired={bounty.stakeRequired}
+          token={bounty.token}
         />
       )}
 
@@ -477,16 +480,25 @@ function WithdrawEarningsCard({ token }: { token: string }) {
   );
 }
 
+function tokenMeta(tokenAddress: string): { symbol: string; decimals: number } {
+  const addr = tokenAddress.toLowerCase();
+  if (addr === MAINNET.tokens.USDC.toLowerCase()) return { symbol: "USDC", decimals: 6 };
+  if (addr === MAINNET.tokens.cUSD.toLowerCase()) return { symbol: "cUSD", decimals: 18 };
+  return { symbol: "CELO", decimals: 18 };
+}
+
 function ClaimSlotCard({
   bountyId,
   claimedSlots,
   maxSlots,
   stakeRequired,
+  token,
 }: {
   bountyId: string;
   claimedSlots: number;
   maxSlots: number;
   stakeRequired: string;
+  token: string;
 }) {
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
@@ -499,7 +511,8 @@ function ClaimSlotCard({
 
   const isFull = claimedSlots >= maxSlots;
   const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID)!.core as Address;
-  const stakeCELO = (Number(stakeRequired) / 1e18).toFixed(2);
+  const { symbol: tokenSymbol, decimals } = tokenMeta(token);
+  const stakeFormatted = formatTokenAmount(BigInt(stakeRequired), decimals, 4);
 
   const claim = async () => {
     try {
@@ -528,7 +541,7 @@ function ClaimSlotCard({
           <p className="mt-1 text-sm text-muted-foreground">
             {isFull
               ? `All ${maxSlots} slots are claimed. Check back later or browse other bounties.`
-              : `Claim a slot by staking ${stakeCELO} CELO. You'll need an ERC-8004 Agent Identity on Celo Mainnet.`}
+              : `Claim a slot by staking ${stakeFormatted} ${tokenSymbol}. You'll need an ERC-8004 Agent Identity on Celo Mainnet.`}
           </p>
           {!isFull && (
             <Button size="sm" className="mt-4" onClick={claim} disabled={isPending}>

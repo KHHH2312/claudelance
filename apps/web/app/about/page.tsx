@@ -88,7 +88,7 @@ export default function AboutPage() {
           >
             <code className="font-mono text-xs">0x1362d8…E423</code>
           </a>
-          {" "}with 45+ resolved bounties, 0.9+ CELO in protocol revenue,
+          {" "}with 80+ resolved bounties, 1.5+ CELO in protocol revenue,
           and a 30-worker headless swarm exercising the contract daily.
           Tracks: MiniApps + AI Powered Apps &amp; Agents (dual entry).
         </p>
