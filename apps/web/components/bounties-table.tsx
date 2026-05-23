@@ -32,7 +32,7 @@ type ApiBounty = {
   instructionUrl: string;
 };
 
-type StatusFilter = "open" | "resolved" | "all";
+type StatusFilter = "open" | "resolved" | "expired" | "all";
 type TokenFilter = "all" | "cusd" | "celo" | "usdc";
 
 const PAGE_SIZE = 15;
@@ -42,6 +42,7 @@ const MAX_PAGES = 50;
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: "open", label: "Open" },
   { value: "resolved", label: "Resolved" },
+  { value: "expired", label: "Expired" },
   { value: "all", label: "All" },
 ];
 
@@ -84,8 +85,21 @@ function deriveTitle(bounty: ApiBounty): string {
   return `Bounty #${bounty.id}`;
 }
 
-function statusLabel(status: number): string {
-  return STATUS_LABELS[status] ?? "Unknown";
+function effectiveStatus(status: number, deadline: string): { label: string; className: string } {
+  if (status === 0) {
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (Number(deadline) <= nowSeconds) {
+      return { label: "Expired", className: "bg-muted text-muted-foreground" };
+    }
+    return { label: "Open", className: "bg-primary/10 text-primary" };
+  }
+  if (status === 1) {
+    return {
+      label: "Resolved",
+      className: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-300",
+    };
+  }
+  return { label: STATUS_LABELS[status] ?? "Unknown", className: "bg-muted text-muted-foreground" };
 }
 
 async function fetchBounties(status: StatusFilter, signal: AbortSignal): Promise<ApiBounty[]> {
@@ -232,7 +246,9 @@ export function BountiesTable() {
           message={
             status === "open"
               ? "No open bounties right now. Check Resolved or All, or post one."
-              : "No bounties match these filters."
+              : status === "expired"
+                ? "No expired bounties found."
+                : "No bounties match these filters."
           }
         />
       ) : (
@@ -285,18 +301,14 @@ export function BountiesTable() {
                         {formatReward(bounty.amount, symbol)}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-1 text-xs font-medium",
-                            bounty.status === 0
-                              ? "bg-primary/10 text-primary"
-                              : bounty.status === 1
-                                ? "bg-emerald-500/12 text-emerald-600 dark:text-emerald-300"
-                                : "bg-muted text-muted-foreground",
-                          )}
-                        >
-                          {statusLabel(bounty.status)}
-                        </span>
+                        {(() => {
+                          const s = effectiveStatus(bounty.status, bounty.deadline);
+                          return (
+                            <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", s.className)}>
+                              {s.label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {formatDeadline(bounty.deadline)}
