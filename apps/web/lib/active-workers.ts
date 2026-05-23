@@ -5,6 +5,9 @@ import { createPublicClient, http, parseAbi, type Address } from "viem";
 import { celoMainnet } from "@/lib/chain";
 import { getDeployment } from "@/lib/contracts";
 
+const IDENTITY_REGISTRY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" as Address;
+const identityAbi = parseAbi(["function balanceOf(address owner) view returns (uint256)"]);
+
 const bountyResolvedEvent = parseAbi([
   "event BountyResolved(uint256 indexed bountyId, address indexed winner, uint96 winnerPayout, uint96 protocolFee)",
 ]);
@@ -20,6 +23,7 @@ export type ActiveWorker = {
   wins: number;
   totalPayout: bigint;
   lastBlock: bigint;
+  hasIdentity: boolean;
 };
 
 export async function fetchActiveWorkers(): Promise<ActiveWorker[]> {
@@ -37,7 +41,7 @@ export async function fetchActiveWorkers(): Promise<ActiveWorker[]> {
     toBlock: latest,
   });
 
-  const map = new Map<Address, ActiveWorker>();
+  const map = new Map<Address, Omit<ActiveWorker, "hasIdentity">>();
   for (const log of logs) {
     const winner = log.args.winner!;
     const payout = log.args.winnerPayout!;
@@ -52,8 +56,25 @@ export async function fetchActiveWorkers(): Promise<ActiveWorker[]> {
     }
   }
 
-  return Array.from(map.values()).sort((a, b) => {
+  const workerList = Array.from(map.values()).sort((a, b) => {
     if (b.wins !== a.wins) return b.wins - a.wins;
     return Number(b.lastBlock - a.lastBlock);
   });
+
+  const identityResults = await client.multicall({
+    allowFailure: true,
+    contracts: workerList.map((w) => ({
+      address: IDENTITY_REGISTRY,
+      abi: identityAbi,
+      functionName: "balanceOf" as const,
+      args: [w.address] as const,
+    })),
+  });
+
+  return workerList.map((w, i) => ({
+    ...w,
+    hasIdentity:
+      identityResults[i]?.status === "success" &&
+      (identityResults[i].result as bigint) > 0n,
+  }));
 }
