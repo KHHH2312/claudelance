@@ -36,7 +36,8 @@ Working reference for submitting Claudelance to the MiniPay Discover page.
 | Category | developer-tools (alt: finance) |
 | App URL | https://claudelance.xyz |
 | Icon (512x512) | https://claudelance.xyz/icon-512.png |
-| Support URL | https://github.com/yeheskieltame/claudelance/issues |
+| Support URL | mailto:support@claudelance.xyz |
+| Support email | support@claudelance.xyz |
 | Terms of Service | https://claudelance.xyz/terms |
 | Privacy Policy | https://claudelance.xyz/privacy |
 
