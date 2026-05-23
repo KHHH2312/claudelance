@@ -100,11 +100,22 @@ export default async function BountyDetailPage({
 
 function BountyHeader({ bounty }: { bounty: BountyJson }) {
   const token = normalizeTokenSymbol(bounty.token);
-  const status = bounty.status === 1 ? "Resolved" : "Open";
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const isPastDeadline = Number(bounty.deadline) <= nowSeconds;
+  const statusLabel =
+    bounty.status === 1
+      ? "Resolved"
+      : bounty.status === 2
+        ? "Cancelled"
+        : bounty.status === 3 || (bounty.status === 0 && isPastDeadline)
+          ? "Expired"
+          : "Open";
   const statusColor =
-    status === "Resolved"
+    statusLabel === "Resolved"
       ? "bg-emerald-500/12 text-emerald-600 dark:text-emerald-300"
-      : "bg-primary/10 text-primary";
+      : statusLabel === "Open"
+        ? "bg-primary/10 text-primary"
+        : "bg-muted text-muted-foreground";
 
   return (
     <div className="flex flex-col gap-4">
@@ -113,7 +124,7 @@ function BountyHeader({ bounty }: { bounty: BountyJson }) {
           #{bounty.id}
         </span>
         <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}>
-          {status}
+          {statusLabel}
         </span>
         {bounty.ciRequired ? (
           <span className="rounded-full bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-600 dark:text-amber-300">

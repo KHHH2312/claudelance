@@ -56,7 +56,9 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
         (s) => s.worker.toLowerCase() === normalizedAddress
       )
     : false;
-  const isOpen = bounty.status === 0;
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const isPastDeadline = Number(bounty.deadline) <= nowSeconds;
+  const isOpen = bounty.status === 0 && !isPastDeadline;
   const hasSubmissions = bounty.submissions.length > 0;
 
   return (
@@ -167,6 +169,23 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
             You&apos;ve submitted your PR. Waiting for the poster to pick a
             winner.
           </p>
+        </GlassCard>
+      )}
+
+      {/* Past-deadline state (not yet cancelled/resolved) */}
+      {bounty.status === 0 && isPastDeadline && (
+        <GlassCard className="!p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            This bounty has passed its deadline. The poster can call{" "}
+            <code className="text-xs">cancelExpired</code> to recover the escrowed funds.
+          </p>
+        </GlassCard>
+      )}
+
+      {/* Cancelled state */}
+      {bounty.status === 2 && (
+        <GlassCard className="!p-6 text-center">
+          <p className="text-sm text-muted-foreground">This bounty has been cancelled.</p>
         </GlassCard>
       )}
 
