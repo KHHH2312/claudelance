@@ -108,8 +108,10 @@ const rulesStepSchema = z.object({
     .refine((value) => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 255, "Use 1 to 255 slots."),
   deadline: z.string().refine((value) => {
     const time = Date.parse(value);
-    return Number.isFinite(time) && time > Date.now();
-  }, "Choose a future deadline."),
+    if (!Number.isFinite(time)) return false;
+    const secondsFromNow = (time - Date.now()) / 1000;
+    return secondsFromNow >= 86_400 && secondsFromNow <= 1_209_600;
+  }, "Deadline must be between 1 and 14 days from now."),
   ciRequired: z.boolean(),
 });
 
@@ -721,7 +723,10 @@ function parseForm(values: FormState, deployment: typeof MAINNET) {
     const token = tokenConfig(values.token, deployment);
     const amount = parseUnits(values.amount, token.decimals);
     const stake = parseUnits(values.stake, token.decimals);
-    const deadlineSeconds = BigInt(Math.floor(Date.parse(values.deadline) / 1000));
+    // Contract takes `deadline` as a DURATION in seconds from now (it adds
+    // block.timestamp on-chain) bounded to MIN_DEADLINE 1d..MAX_DEADLINE 14d —
+    // NOT an absolute timestamp.
+    const deadlineSeconds = BigInt(Math.floor((Date.parse(values.deadline) - Date.now()) / 1000));
     const requirementsHash = keccak256(
       toBytes(
         JSON.stringify({
