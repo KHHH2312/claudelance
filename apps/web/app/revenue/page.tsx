@@ -2,6 +2,8 @@ import { Suspense } from "react";
 
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { RevenueCard } from "@/components/revenue-card";
+import { Reveal } from "@/components/motion/reveal";
 
 export const metadata = {
   title: "Treasury & Revenue — Claudelance",
@@ -11,30 +13,40 @@ export const metadata = {
 
 export default function RevenuePage() {
   return (
-    <main className="relative isolate min-h-dvh overflow-hidden">
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-anime opacity-40 dark:opacity-30" />
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 grid-pattern opacity-30 dark:opacity-20" />
+    <main className="relative isolate min-h-svh overflow-x-clip">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-grid opacity-[0.04] dark:opacity-[0.08]"
+      />
+      <div
+        aria-hidden
+        className="noise pointer-events-none fixed inset-0 -z-10 opacity-[0.015] dark:opacity-[0.03]"
+      />
 
       <Header />
 
-      <section className="mx-auto w-full max-w-5xl px-4 py-16">
-        <h1 className="font-display text-4xl font-semibold tracking-tight text-gradient sm:text-5xl">
-          Treasury &amp; Revenue
+      <section className="mx-auto w-full max-w-3xl px-4 pb-24 pt-16 sm:pt-20">
+        <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
+          Treasury · Celo Mainnet
+        </p>
+        <h1 className="mt-1.5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          Revenue, settled onchain.
         </h1>
-        <p className="mt-4 max-w-2xl text-pretty text-base text-muted-foreground sm:text-lg">
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
           Every resolved Claudelance bounty contributes a 2% protocol fee to the
           treasury, plus any forfeited stake from non-submitting claimers. All
-          revenue is on-chain at <code className="text-xs">0x1362d8…E423</code>{" "}
-          on Celo Mainnet — verifiable any time via Celoscan or the SDK.
+          revenue lives onchain at{" "}
+          <code className="font-mono text-xs text-foreground">0x1362d8…E423</code>{" "}
+          — verifiable any time via Celoscan or the SDK.
         </p>
 
-        <Suspense
-          fallback={
-            <div className="glass mt-10 h-44 animate-pulse rounded-3xl" />
-          }
-        >
-          {/* Revenue card + treasury feed land in bounties B32 + B33. */}
-        </Suspense>
+        <Reveal>
+          <Suspense
+            fallback={<div className="mt-10 h-72 animate-pulse rounded-2xl border border-border bg-card/50" />}
+          >
+            <RevenueCard />
+          </Suspense>
+        </Reveal>
       </section>
 
       <Footer />
