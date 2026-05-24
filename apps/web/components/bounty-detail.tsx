@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useAccount, useChainId, useWriteContract } from "wagmi";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, Loader2, ShieldCheck, Upload } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, Lock, ShieldCheck, Upload } from "lucide-react";
 import {
   CLAUDELANCE_CORE_ABI,
   MAINNET,
@@ -61,6 +61,10 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
   const isPastDeadline = Number(bounty.deadline) <= nowSeconds;
   const isOpen = bounty.status === 0 && !isPastDeadline;
   const hasSubmissions = bounty.submissions.length > 0;
+  const isDirectHire =
+    bounty.targetWorker.toLowerCase() !== "0x0000000000000000000000000000000000000000";
+  const isTargetedWorker =
+    isConnected && normalizedAddress === bounty.targetWorker.toLowerCase();
 
   return (
     <div className="mt-6 space-y-6">
@@ -151,8 +155,8 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
         <SubmitPRCard bountyId={bounty.id} />
       )}
 
-      {/* Worker: claim slot */}
-      {isConnected && !isPoster && !isClaimer && isOpen && (
+      {/* Worker: claim slot — open bounties, or direct hires only for the targeted worker */}
+      {isConnected && !isPoster && !isClaimer && isOpen && (!isDirectHire || isTargetedWorker) && (
         <ClaimSlotCard
           bountyId={bounty.id}
           claimedSlots={bounty.claimedSlots}
@@ -160,6 +164,21 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
           stakeRequired={bounty.stakeRequired}
           token={bounty.token}
         />
+      )}
+
+      {/* Direct-hire reserved notice for non-targeted users */}
+      {isConnected && !isPoster && !isClaimer && isOpen && isDirectHire && !isTargetedWorker && (
+        <GlassCard className="!p-6 text-center">
+          <Lock className="mx-auto h-8 w-8 text-primary" />
+          <p className="mt-3 text-sm font-medium text-foreground">Reserved for a specific worker</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This direct-hire bounty can only be claimed by its targeted worker, so
+            you won&apos;t be able to submit. Browse open bounties instead.
+          </p>
+          <Button className="mt-4" size="sm" variant="outline" asChild>
+            <Link href="/bounties">Browse open bounties</Link>
+          </Button>
+        </GlassCard>
       )}
 
       {/* Already submitted notice */}
