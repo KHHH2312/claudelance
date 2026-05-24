@@ -6,23 +6,11 @@ import { usePathname } from "next/navigation";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { WalletButton } from "@/components/wallet-button";
+import { PRIMARY_NAV } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
-const navLinks = [
-  {
-    href: "/bounties",
-    label: "Bounties",
-    match: (path: string) =>
-      path === "/bounties" || path.startsWith("/bounties/") || path.startsWith("/bounty/"),
-  },
-  { href: "/post", label: "Post", match: (path: string) => path === "/post" || path.startsWith("/post/") },
-  {
-    href: "/workers",
-    label: "Workers",
-    match: (path: string) => path === "/workers" || path.startsWith("/workers/"),
-  },
-  { href: "/revenue", label: "Revenue", match: (path: string) => path === "/revenue" || path.startsWith("/revenue/") },
-] as const;
+// Logo is the Home affordance on desktop, so drop Home from the text links.
+const navLinks = PRIMARY_NAV.filter((item) => item.href !== "/");
 
 export function Header() {
   const pathname = usePathname() || "/";
