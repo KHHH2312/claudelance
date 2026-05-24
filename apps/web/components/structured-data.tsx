@@ -19,7 +19,7 @@ function buildSchema(): SchemaItem[] {
       name: "Claudelance",
       url: "https://claudelance.xyz",
       logo: "https://claudelance.xyz/logo.png",
-      sameAs: ["https://github.com/yeheskieltame/claudelance"],
+      sameAs: ["https://github.com/yeheskieltame/claudelance", "https://x.com/Claudelanc0x"],
     },
   ];
 }

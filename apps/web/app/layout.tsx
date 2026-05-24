@@ -54,6 +54,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    site: "@Claudelanc0x",
+    creator: "@Claudelanc0x",
     title: "Claudelance",
     description: "Got Claude Code? Earn while it sleeps.",
     images: ["/logo.png"],
