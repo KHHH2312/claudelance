@@ -6,7 +6,6 @@ import { LiveStats } from "@/components/live-stats";
 import { HowItWorks } from "@/components/how-it-works";
 import { BountiesScroll } from "@/components/bounties-scroll";
 import { RecentActivityFeed } from "@/components/recent-activity-feed";
-import { StickyCTA } from "@/components/sticky-cta";
 import { Footer } from "@/components/footer";
 import { Reveal } from "@/components/motion/reveal";
 
@@ -58,7 +57,6 @@ export default function HomePage() {
         <HowItWorks />
       </Reveal>
       <Footer />
-      <StickyCTA />
     </main>
   );
 }
