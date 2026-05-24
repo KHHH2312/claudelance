@@ -11,47 +11,28 @@ import { Reveal } from "@/components/motion/reveal";
 
 export default function HomePage() {
   return (
-    <main className="relative isolate min-h-svh overflow-x-clip">
-      {/* Subtle protocol grid — dark mode only visible */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-grid opacity-[0.04] dark:opacity-[0.08]"
-      />
-      {/* Fine grain for premium depth */}
-      <div
-        aria-hidden
-        className="noise pointer-events-none fixed inset-0 -z-10 opacity-[0.015] dark:opacity-[0.03]"
-      />
-
+    <main className="relative min-h-svh overflow-x-clip">
       <Header />
 
-      {/* Split hero: headline left, live terminal right */}
-      <div className="mx-auto w-full max-w-6xl px-4">
-        <div className="flex flex-col gap-10 pb-16 pt-14 sm:pt-20 lg:flex-row lg:items-start lg:gap-14 lg:pt-24">
-          <div className="flex-1 min-w-0">
-            <Suspense fallback={<HeroSkeleton />}>
-              <Hero />
-            </Suspense>
-          </div>
-          <div className="w-full lg:w-[380px] lg:shrink-0 lg:pt-4">
-            <Suspense fallback={<TerminalSkeleton />}>
-              <RecentActivityFeed />
-            </Suspense>
-          </div>
-        </div>
-      </div>
+      <Suspense fallback={<HeroSkeleton />}>
+        <Hero />
+      </Suspense>
 
-      {/* Protocol stats strip */}
       <Reveal>
         <Suspense fallback={<StatsFallback />}>
           <LiveStats />
         </Suspense>
       </Reveal>
 
-      {/* Open bounties horizontal scroll */}
       <Suspense fallback={null}>
         <BountiesScroll />
       </Suspense>
+
+      <section className="mx-auto w-full max-w-2xl px-4 pb-20">
+        <Suspense fallback={<TerminalSkeleton />}>
+          <RecentActivityFeed />
+        </Suspense>
+      </section>
 
       <Reveal>
         <HowItWorks />
