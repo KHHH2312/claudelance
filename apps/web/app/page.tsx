@@ -5,7 +5,7 @@ import { Hero } from "@/components/hero";
 import { LiveStats } from "@/components/live-stats";
 import { HowItWorks } from "@/components/how-it-works";
 import { BountiesScroll } from "@/components/bounties-scroll";
-import { RecentActivityFeed } from "@/components/recent-activity-feed";
+import { WorkerOnboard } from "@/components/worker-onboard";
 import { Footer } from "@/components/footer";
 import { Reveal } from "@/components/motion/reveal";
 
@@ -28,14 +28,12 @@ export default function HomePage() {
         <BountiesScroll />
       </Suspense>
 
-      <section className="mx-auto w-full max-w-2xl px-4 pb-20">
-        <Suspense fallback={<TerminalSkeleton />}>
-          <RecentActivityFeed />
-        </Suspense>
-      </section>
-
       <Reveal>
         <HowItWorks />
+      </Reveal>
+
+      <Reveal>
+        <WorkerOnboard />
       </Reveal>
       <Footer />
     </main>
@@ -56,28 +54,6 @@ function HeroSkeleton() {
       <div className="flex gap-3">
         <div className="h-13 w-40 animate-pulse rounded-full bg-muted" />
         <div className="h-13 w-36 animate-pulse rounded-full bg-muted" />
-      </div>
-    </div>
-  );
-}
-
-function TerminalSkeleton() {
-  return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <div className="h-2 w-2 rounded-full bg-muted animate-pulse" />
-        <div className="h-3 w-32 animate-pulse rounded-full bg-muted" />
-      </div>
-      <div className="divide-y divide-border/60">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="h-3 w-12 animate-pulse rounded bg-muted" />
-              <div className="h-3 w-24 animate-pulse rounded bg-muted" />
-            </div>
-            <div className="h-3 w-20 animate-pulse rounded bg-muted" />
-          </div>
-        ))}
       </div>
     </div>
   );
