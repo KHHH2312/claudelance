@@ -107,9 +107,9 @@ const config: Config = {
         "2xl": "24px",
       },
       boxShadow: {
-        glass: "0 8px 32px 0 rgba(31, 38, 135, 0.08)",
-        "glass-strong": "0 16px 48px 0 rgba(31, 38, 135, 0.18)",
-        glow: "0 0 32px 0 hsl(var(--primary) / 0.35)",
+        glass: "0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.05)",
+        "glass-strong": "0 12px 32px -12px rgba(0, 0, 0, 0.18)",
+        glow: "0 0 32px 0 hsl(var(--primary) / 0.25)",
       },
       backdropBlur: {
         xs: "2px",

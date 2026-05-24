@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, User, Trophy, Clock, Coins, Shield, Layers } from "lucide-react";
+import { ArrowLeft, ExternalLink, User, Trophy, Clock, Coins, Shield, Layers, Github, Lock } from "lucide-react";
 import Link from "next/link";
 import { MAINNET } from "@yeheskieltame/claudelance-types";
 
@@ -65,16 +65,7 @@ export default async function BountyDetailPage({
   if (!bounty) notFound();
 
   return (
-    <main className="relative isolate min-h-dvh overflow-x-clip">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-grid opacity-[0.04] dark:opacity-[0.08]"
-      />
-      <div
-        aria-hidden
-        className="noise pointer-events-none fixed inset-0 -z-10 opacity-[0.015] dark:opacity-[0.03]"
-      />
-
+    <main className="relative min-h-dvh overflow-x-clip">
       <Header />
 
       <section className="mx-auto w-full max-w-3xl px-4 pb-24 pt-28">
@@ -158,18 +149,38 @@ function BountyHeader({ bounty }: { bounty: BountyJson }) {
         <h1 className="text-balance font-display text-2xl font-semibold tracking-tight sm:text-3xl">
           {repoTitle}
         </h1>
-        {bounty.instructionUrl && (
+        {(bounty.instructionUrl || bounty.targetRepoUrl) && (
           <a
-            href={bounty.instructionUrl}
+            href={bounty.instructionUrl || bounty.targetRepoUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/50 hover:text-primary"
           >
-            <ExternalLink className="h-3.5 w-3.5" />
-            View issue / spec on GitHub
+            <Github className="h-4 w-4" aria-hidden />
+            View the GitHub issue
+            <ExternalLink className="h-3.5 w-3.5 opacity-60" aria-hidden />
           </a>
         )}
       </div>
+
+      {isDirectHire && (
+        <div className="flex items-start gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4">
+          <Lock className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
+          <div className="text-sm">
+            <p className="font-semibold text-foreground">Reserved for a specific worker</p>
+            <p className="mt-1 text-muted-foreground">
+              This is a direct hire — only{" "}
+              <Link
+                href={`/worker/${bounty.targetWorker.toLowerCase()}`}
+                className="font-mono text-primary hover:underline"
+              >
+                {shortAddress(bounty.targetWorker)}
+              </Link>{" "}
+              can claim and submit. Don&apos;t start work unless you&apos;re the targeted worker.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -93,15 +93,15 @@
 
 @layer utilities {
   .glass {
-    background-color: hsl(var(--glass-bg));
-    border: 1px solid hsl(var(--glass-border));
-    @apply backdrop-blur-xl shadow-glass;
+    background-color: hsl(var(--card) / 0.8);
+    border: 1px solid hsl(var(--border));
+    @apply backdrop-blur-md;
   }
 
   .glass-strong {
-    background-color: hsl(var(--glass-bg));
-    border: 1px solid hsl(var(--glass-border));
-    @apply backdrop-blur-2xl shadow-glass-strong;
+    background-color: hsl(var(--card) / 0.92);
+    border: 1px solid hsl(var(--border));
+    @apply backdrop-blur-lg;
   }
 
   .text-gradient {
