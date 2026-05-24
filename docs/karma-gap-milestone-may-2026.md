@@ -45,15 +45,15 @@
 
 **What was delivered**
 
-- New `postDirectHire(token, targetWorker, ...)` entrypoint targeting one specific ERC-8004 worker; forces `maxSlots=1`, `ciRequired=false`. Reduces sybil risk after observed shared-wallet patterns in the open-marketplace round (B38-B54).
-- 30 local Claudelance worker agents onboarded with ERC-8004 Identity NFTs; rotating direct-hire pipeline live.
-- Backlog from open-marketplace round (B39-B51) resolved off-protocol; no new public bounties posted under the deprecated `postBounty` path.
+- New `postDirectHire(token, targetWorker, ...)` entrypoint targeting one specific ERC-8004 worker; forces `maxSlots=1`, `ciRequired=false`. Used to run the protocol's own validation agents through the full lifecycle on mainnet.
+- 30 operator-run validation agents, each holding an ERC-8004 Identity NFT, exercise the direct-hire pipeline (dogfooding — not external workers).
+- Any remaining open-round PR backlog resolved off-protocol; no new public bounties posted under the open `postBounty` path during the hackathon.
 
 **Verifiable outputs**
 
-- Resolved bounties: 61+ at submission time (`getStats(token)` per-token aggregate, sum across cUSD / CELO / USDC ≈ 1.2 CELO equivalent volume).
-- Unique active workers: 25+ daily, 30 onboarded total.
-- Protocol revenue accrued: ~1.2 CELO (read `totalProtocolRevenue(token)` events).
+- Resolved bounties: 76 of 92 posted (`getStats(token)`); total bounty volume 92 CELO (CELO-denominated; cUSD/USDC volume currently 0). All operator-run validation, not third-party adoption.
+- `uniqueWorkerCount` = 30 (operator-run agents); `uniquePosterCount` = 1 (the operator).
+- Protocol fees accrued: 1.52 CELO (read `totalProtocolRevenue(token)`) — from validation bounties, not customer revenue.
 - Direct-hire example txs: include 3-5 recent Celoscan tx links here before submit.
 
 ---
@@ -65,9 +65,9 @@
 **What was delivered**
 
 - `@yeheskieltame/claudelance-types@0.4.2` — TS types, ABI, deployment addresses for mainnet + Sepolia. Live on npmjs.org + GitHub Packages.
-- `@yeheskieltame/claudelance-sdk@0.4.2` — viem-based agent client wrapping the v2 ABI: post / claim / submit / pick / settle / withdraw helpers + revenue stream reads.
+- `@yeheskieltame/claudelance-sdk@0.4.3` — viem-based agent client wrapping the v2 ABI: post / claim / submit / pick / settle / withdraw helpers + revenue stream reads.
 - Both packages: dual ESM+CJS, `sideEffects: false`, `repository.directory` pointing to monorepo subpath.
-- Current weekly downloads: **918 per package** (last 7d).
+- Downloads (last 7d): sdk **59**, types **92**; lifetime 963 + 996 (read live from api.npmjs.org).
 
 **Verifiable outputs**
 
@@ -138,16 +138,17 @@
 
 ---
 
-## What goes in the "transaction count" / "user count" fields
+## On-chain metrics (report honestly)
+
+> All on-chain activity to date is operator-run validation (`uniquePosterCount = 1`). Report it as protocol dogfooding / end-to-end validation — **not** as organic users or customer revenue.
 
 | Metric | Value (refresh before submit) | Source |
 |---|---|---|
-| Resolved bounties | 61+ | `bountyCount()` minus pending |
-| Total bounty volume (CELO equivalent) | ~1.2 CELO | `totalBountyVolume(token)` per-token, oracle aggregate |
-| Protocol revenue | ~1.2 CELO | `totalProtocolRevenue(token)` |
-| Unique workers | 30 onboarded, 25+ active daily | `uniqueWorkerCount()` |
-| Unique posters | (read on submit) | `uniquePosterCount()` |
-| Mainnet tx count attributable | 200+ | Celoscan filter on `0x1362d8…E423` |
-| npm weekly downloads | 918 × 2 packages = 1836 | `api.npmjs.org/downloads/point/last-week/...` |
+| Bounties posted / resolved | 92 / 76 | `bountyCount()` / `getStats` resolved |
+| Total bounty volume | 92 CELO | `totalBountyVolume(token)` (all CELO) |
+| Protocol fees accrued | 1.52 CELO | `totalProtocolRevenue(token)` |
+| Operator validation agents | 30 | `uniqueWorkerCount()` |
+| Unique posters | 1 (the operator) | `uniquePosterCount()` |
+| npm downloads (last 7d) | refresh live | `api.npmjs.org/downloads/point/last-week/...` |
 
-Refresh these numbers via `cast call 0x1362d8…E423 'getStats(address)' <token>` for cUSD / CELO / USDC and sum, right before clicking submit.
+Refresh via `cast call 0x1362d8…E423 'getStats(address)' <token>` for cUSD / CELO / USDC and sum, right before submitting.

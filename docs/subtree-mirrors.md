@@ -23,8 +23,7 @@ Single-package mirrors give those crawlers exactly what they look for:
 - One repo per published name
 - `package.json` at the root
 - `repository.url` pointing at that same repo
-- Independent GitHub commit history per package (compounding GitHub-activity
-  signal in scoring rubrics)
+- Independent GitHub commit history per package
 
 The monorepo remains the source of truth. Mirrors are read-only downstream
 artifacts of `git subtree split`.
