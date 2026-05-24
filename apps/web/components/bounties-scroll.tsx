@@ -1,6 +1,6 @@
 import { ArrowRight, CalendarClock, Coins } from "lucide-react";
 import Link from "next/link";
-import { MAINNET } from "@yeheskieltame/claudelance-types";
+import { MAINNET, ZERO_ADDRESS } from "@yeheskieltame/claudelance-types";
 
 import { formatTokenAmount } from "@/lib/format-token";
 import { Reveal } from "@/components/motion/reveal";
@@ -24,6 +24,7 @@ type ApiBounty = {
   status?: number;
   claimedSlots?: number;
   maxSlots?: number;
+  targetWorker?: string;
 };
 
 type BountiesResponse = {
@@ -37,14 +38,17 @@ export async function BountiesScroll() {
 
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-    const url = `${baseUrl}/api/bounties?status=open&limit=5`;
+    const url = `${baseUrl}/api/bounties?status=open&limit=12`;
     const res = await fetch(url, {
       headers: { accept: "application/json" },
       next: { revalidate: 30 },
     });
     if (res.ok) {
       const data: BountiesResponse = await res.json();
-      items = data.items ?? [];
+      // Landing shows only open-marketplace bounties (skip direct hires), max 3.
+      items = (data.items ?? [])
+        .filter((b) => !b.targetWorker || b.targetWorker === ZERO_ADDRESS)
+        .slice(0, 3);
     }
   } catch {
     // Silently fall back — section hidden when no open bounties
