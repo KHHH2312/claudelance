@@ -2,13 +2,13 @@ import { ArrowRight, CalendarClock, Coins } from "lucide-react";
 import Link from "next/link";
 import { MAINNET } from "@yeheskieltame/claudelance-types";
 
-import { Button } from "@/components/ui/button";
 import { formatTokenAmount } from "@/lib/format-token";
+import { Reveal } from "@/components/motion/reveal";
 
 const TOKEN_STYLES: Record<string, string> = {
-  cusd: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
-  celo: "border-amber-500/30 bg-amber-400/15 text-amber-700 dark:text-amber-200",
-  usdc: "border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-200",
+  cusd: "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+  celo: "border-primary/30 bg-primary/10 text-primary",
+  usdc: "border-sky-500/25 bg-sky-500/10 text-sky-600 dark:text-sky-300",
 };
 
 type ApiBounty = {
@@ -36,9 +36,7 @@ export async function BountiesScroll() {
   let items: ApiBounty[] = [];
 
   try {
-    // Fetch directly from API route (server-side, same process)
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
     const url = `${baseUrl}/api/bounties?status=open&limit=5`;
     const res = await fetch(url, {
       headers: { accept: "application/json" },
@@ -49,35 +47,36 @@ export async function BountiesScroll() {
       items = data.items ?? [];
     }
   } catch {
-    // Silently fall back — bounties section will be hidden
+    // Silently fall back — section hidden when no open bounties
   }
 
   if (items.length === 0) return null;
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 pb-20">
+    <section className="mx-auto w-full max-w-6xl px-4 pb-24">
       <div className="mb-6 flex items-end justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
             Open bounties
           </p>
-          <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">
-            Latest work waiting
+          <h2 className="mt-1.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Work waiting onchain.
           </h2>
         </div>
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/bounties">
-            View all <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
+        <Link
+          href="/bounties"
+          className="touch-target inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          View all
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
 
-      <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-none snap-x snap-mandatory">
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((bounty, i) => (
-          <BountyMiniCard
-            key={bounty.id ?? i}
-            bounty={bounty}
-          />
+          <Reveal key={bounty.id ?? i} delay={i * 0.07} className="shrink-0 snap-start">
+            <BountyMiniCard bounty={bounty} />
+          </Reveal>
         ))}
       </div>
     </section>
@@ -87,40 +86,35 @@ export async function BountiesScroll() {
 function BountyMiniCard({ bounty }: { bounty: ApiBounty }) {
   const { symbol: token, decimals } = resolveToken(bounty.token ?? "");
   const tokenStyle =
-    TOKEN_STYLES[token.toLowerCase()] ??
-    "border-border bg-muted text-muted-foreground";
+    TOKEN_STYLES[token.toLowerCase()] ?? "border-border bg-muted text-muted-foreground";
   const amount = formatAmount(bounty.amount, decimals);
   const deadline = formatDeadline(bounty.deadline);
-  const title =
-    bounty.title ?? deriveTitle(bounty);
-  const href =
-    bounty.instructionUrl ??
-    bounty.targetRepoUrl ??
-    `/bounty/${bounty.id ?? ""}`;
+  const title = bounty.title ?? deriveTitle(bounty);
+  const href = bounty.instructionUrl ?? bounty.targetRepoUrl ?? `/bounty/${bounty.id ?? ""}`;
 
   return (
-    <article className="glass shrink-0 w-72 snap-start rounded-2xl p-5 hover:shadow-glass-strong transition-shadow">
-      <div className="flex items-start justify-between gap-2">
+    <article className="group flex h-full w-72 flex-col rounded-2xl border border-border bg-card/60 p-5 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card">
+      <div className="flex items-center justify-between gap-2">
         <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${tokenStyle}`}
+          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 font-mono text-[0.7rem] font-semibold uppercase ${tokenStyle}`}
         >
           {token}
         </span>
-        <span className="text-xs text-muted-foreground">
-          {bounty.claimedSlots ?? 0}/{bounty.maxSlots ?? 1}
+        <span className="font-mono text-[0.7rem] tabular-nums text-muted-foreground">
+          {bounty.claimedSlots ?? 0}/{bounty.maxSlots ?? 1} slots
         </span>
       </div>
 
-      <h3 className="mt-3 line-clamp-2 text-base font-semibold leading-6">
+      <h3 className="mt-4 line-clamp-2 min-h-[3rem] text-[0.95rem] font-semibold leading-6">
         {title}
       </h3>
 
-      <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <Coins className="h-3.5 w-3.5" />
+      <div className="mt-4 flex items-center gap-4 font-mono text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 text-foreground">
+          <Coins className="h-3.5 w-3.5 text-primary" />
           {amount} {token}
         </span>
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1.5">
           <CalendarClock className="h-3.5 w-3.5" />
           {deadline}
         </span>
@@ -128,9 +122,10 @@ function BountyMiniCard({ bounty }: { bounty: ApiBounty }) {
 
       <Link
         href={href}
-        className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+        className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:gap-2.5"
       >
-        View bounty <ArrowRight className="h-3.5 w-3.5" />
+        View bounty
+        <ArrowRight className="h-3.5 w-3.5 transition-all" />
       </Link>
     </article>
   );
