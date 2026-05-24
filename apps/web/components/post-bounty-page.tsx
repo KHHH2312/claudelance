@@ -314,7 +314,7 @@ function PostBountyForm() {
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="rounded-lg border bg-card p-4 shadow-sm">
+        <aside className="rounded-2xl border border-border bg-card p-4">
           <ol className="space-y-2">
             {steps.map((item) => {
               const Icon = item.icon;
@@ -325,7 +325,7 @@ function PostBountyForm() {
                   <button
                     type="button"
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm transition-colors",
+                      "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-colors",
                       active ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground",
                     )}
                     onClick={() => {
@@ -348,7 +348,7 @@ function PostBountyForm() {
           </ol>
         </aside>
 
-        <section className="rounded-lg border bg-card p-5 shadow-sm sm:p-6" data-step={step}>
+        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6" data-step={step}>
           {step === 0 ? (
             <TokenStep
               values={values}
@@ -418,7 +418,7 @@ function WalletStrip({
   onDisconnect: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm shadow-sm">
+    <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm">
       <Wallet className="h-4 w-4 text-muted-foreground" aria-hidden />
       {isConnected && address ? (
         <>
@@ -460,7 +460,7 @@ function TokenStep({
             key={token}
             type="button"
             className={cn(
-              "rounded-lg border p-4 text-left transition-colors",
+              "rounded-xl border p-4 text-left transition-colors",
               values.token === token ? "border-primary bg-primary/10" : "bg-background hover:bg-accent",
             )}
             onClick={() => onChange("token", token)}
@@ -557,7 +557,7 @@ function RulesStep({
           placeholder=""
           onChange={(value) => onChange("deadline", value)}
         />
-        <label className="flex min-h-20 items-center gap-3 rounded-lg border bg-background px-4 py-3">
+        <label className="flex min-h-20 items-center gap-3 rounded-xl border bg-background px-4 py-3">
           <input
             type="checkbox"
             checked={values.ciRequired}
@@ -615,14 +615,14 @@ function ReviewStep({
       <StepHeading title="Review and confirm" description="Approve the token, then post the bounty onchain." />
       <div className="mt-6 grid gap-3">
         {rows.map(([label, value]) => (
-          <div key={label} className="grid gap-1 rounded-lg border bg-background px-4 py-3 sm:grid-cols-[160px_minmax(0,1fr)]">
+          <div key={label} className="grid gap-1 rounded-xl border bg-background px-4 py-3 sm:grid-cols-[160px_minmax(0,1fr)]">
             <dt className="text-xs font-medium uppercase text-muted-foreground">{label}</dt>
             <dd className="break-words text-sm font-semibold">{value}</dd>
           </div>
         ))}
       </div>
 
-      <div className="mt-5 rounded-lg border bg-background p-4">
+      <div className="mt-5 rounded-xl border bg-background p-4">
         <div className="flex items-start gap-3">
           <FileCode2 className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           <div className="min-w-0">
@@ -634,7 +634,7 @@ function ReviewStep({
         </div>
       </div>
 
-      <label className="mt-5 flex items-center gap-3 rounded-lg border bg-background px-4 py-3 text-sm">
+      <label className="mt-5 flex items-center gap-3 rounded-xl border bg-background px-4 py-3 text-sm">
         <input
           type="checkbox"
           checked={values.alreadyApproved}
@@ -645,7 +645,7 @@ function ReviewStep({
       </label>
 
       {actionError ? (
-        <div className="mt-5 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           {actionError}
         </div>
       ) : null}
@@ -676,7 +676,7 @@ function ReviewStep({
 function StepHeading({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+      <h2 className="font-display text-2xl font-semibold tracking-tight">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
     </div>
   );
@@ -706,7 +706,7 @@ function LabelledInput({
         type={type}
         inputMode={inputMode}
         className={cn(
-          "mt-2 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          "mt-2 w-full rounded-xl border bg-background px-3 py-2 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2",
           error ? "border-destructive" : "border-input",
         )}
         value={value}
