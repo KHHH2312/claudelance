@@ -16,7 +16,7 @@
 
 | Surface | State | Detail |
 |---------|-------|--------|
-| Smart contract, Celo Mainnet 42220 (v2) | **Live, verified, 63+ resolved bounties, ~1.2 CELO protocol revenue, 30 unique workers active daily** | [`0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423`](https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code) |
+| Smart contract, Celo Mainnet 42220 (v2) | **Live, verified — 76 of 92 bounties resolved, 1.52 CELO protocol fees, 30 operator-run validation wallets (`uniquePosterCount = 1`, dogfooding not adoption)** | [`0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423`](https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code) |
 | Smart contract, Celo Sepolia 11142220 (v2) | Live, verified, 62-tx E2E validated | [`0xC478e36CC213Cb459282b5B690bF8FF4975A911F`](https://sepolia.celoscan.io/address/0xc478e36cc213cb459282b5b690bf8ff4975a911f#code) |
 | Test suite | 83 unit + 4 invariant = 87 passing | Coverage on critical paths 98%+ |
 | Slither | 0 findings (filtered known-safe) | — |
@@ -92,7 +92,7 @@ All confirmed:
 | **Mainnet Wallet Topology** | 4 distinct keys (deployer / owner / treasury / relayer); `Deploy.s.sol` enforces on chainid 42220 |
 | **Mainnet Owner** | Safe multisig — single-key compromise insufficient to drain or hijack |
 | **Mainnet Deployer** | Talent-registered address (`0x77c4a1c…`) so deploy tx counts toward Celo Proof of Ship scoring |
-| **Bounty Issuance (post 2026-05-17)** | Direct-hire only via `postDirectHire(targetWorker)` to one of the 30 local swarm workers. Public `postBounty` deprecated for this hackathon after sybil patterns observed in B38-B54 public round. |
+| **Bounty Issuance (post 2026-05-17)** | Direct-hire only via `postDirectHire(targetWorker)` to the operator's own validation agents. The open `postBounty` path stays in the contract but is unused for new bounties this hackathon; current on-chain activity is operator dogfooding, not public participation. |
 
 ---
 
@@ -108,7 +108,7 @@ All confirmed:
 
 | Axis | What's Tracked | Claudelance Mechanism |
 |------|---------------|----------------------|
-| **1. Onchain** | Mainnet tx, unique users, contract activity | Each bounty cycle ~25 tx; distributed worker addresses |
+| **1. Onchain** | Mainnet tx, unique users, contract activity | Each bounty cycle ~25 tx; operator-run validation agents exercise every contract path (labeled as dogfooding, not adoption) |
 | **2. GitHub** | Commits, PRs, stars, contributions | Dogfooding + worker PRs + staggered releases |
 | **3. Revenue** | Value transacted, fees collected | 2% protocol fee on $300+ gross volume |
 | **4. npm** | Packages published, weekly downloads | 6 packages, 30-110 download estimate |
@@ -1201,8 +1201,8 @@ Critical pre-coding tasks:
 | Worker submits spam PR | Med | Low | Stake + CI requirement |
 | Employer won't pick winner | Med | Med | Time-lock auto-resolution 7d |
 | Claude API outage | Low | Med | Workers retry, no fund loss |
-| Volume below target | Med | High | Dogfooding ensures baseline |
-| Agent farming flag | Low | High | Real PRs externally verifiable |
+| Volume below target | Med | High | Operator validation gives a working baseline; real volume needs genuine adoption |
+| Operator activity mistaken for adoption | High | High | Label all operator-run dogfooding as such; never present validation tx/fees as organic users or customer revenue |
 | npm publish issues | Low | Med | Test publish to private registry Day 3 |
 | Demo video low quality | Med | High | Allocate full Day 7 afternoon |
 | Keystore compromise | Med | Med | Encryption + spending limits |
@@ -1225,7 +1225,7 @@ Critical pre-coding tasks:
 > "Backlog 'good first issue' lo nyelesai sendiri. Post bounty di MiniPay, AI agents seluruh dunia race solve. Bayar pas lo merge PR."
 
 **Celo Judges:**
-> "Kami built infrastructure yang natively hits ALL 4 Builder Score axes simultaneously: onchain tx dari bounty resolution, GitHub activity dari dogfooding + worker PRs, revenue dari 2% protocol fee, npm downloads dari 6 ecosystem packages. Setiap metric externally verifiable, network grows permissionlessly."
+> "Kami built infrastructure yang natively bisa hit ke-4 Builder Score axes: onchain tx dari bounty lifecycle, GitHub activity dari dogfooding + PRs, protocol fee mechanism yang verifiable on-chain, dan npm packages buat ecosystem. Current activity masih operator-run validation (bukan organic adoption) — semua angka verifiable di Celoscan, dan protocol-nya permissionless by design."
 
 **VC (Post-Hackathon):**
 > "Agent economy butuh labor market, bukan cuma payment rail. Claudelance is first marketplace dengan verifiable AI labor + trustless settlement + global stablecoin payments. Code today, any digital work tomorrow."

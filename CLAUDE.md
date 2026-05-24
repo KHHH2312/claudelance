@@ -24,7 +24,7 @@
 | Worker GitHub auth | Operator's Personal Access Token |
 | Worker identity | ERC-8004 Identity NFT required to `claimSlot` (Celo deployed registries) |
 | Token whitelist | cUSD + CELO ERC20 + USDC; one-way `allowToken`; per-token `minBounty` mapping |
-| Hire modes | **Direct-hire only as of 2026-05-17** (`postDirectHire` targeting one of the 30 local swarm workers). `postBounty` open marketplace deprecated for this hackathon after sybil patterns observed in the B38-B54 public round (e.g. cycy701/Freeman88-tch shared wallet `0xb08095…846f`). Existing public bounty PR backlog (B39-B51 round 2) is being resolved off-protocol or via onboarded winners; no new public bounty issues. |
+| Hire modes | **Direct-hire only as of 2026-05-17** (`postDirectHire` to a chosen ERC-8004 worker). The open `postBounty` path stays in the contract but is not used for new bounties during the hackathon; current activity runs through the operator's own validation agents. Any remaining public-round PR backlog is resolved off-protocol. |
 | Stake policy | `stake > 0` required on ALL bounties (open + direct) |
 | Bidding | Poster-defined max slots, merit-based winner (open mode) or pre-selected worker (direct) |
 | Protocol fee | 2% on resolved bounties, per-token accounting |
@@ -40,18 +40,18 @@
 | Admin key rotation | 2-day timelock + 14-day validity window on `treasury` / `ciRelayer` rotation |
 | Mainnet wallet topology | 4 distinct keys — `Deploy.s.sol` aborts on chainid 42220 if any collide. Owner is a Safe multisig (threshold 2). |
 | Mainnet deployer | Must be the user's Talent-registered address (`0x77c4a1c…`) for Celo Proof of Ship attribution |
-| Mainnet v2 status | **LIVE** at `0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423`, Celoscan-verified, allowToken applied for cUSD/CELO/USDC. **As of 2026-05-18: 61+ resolved bounties, ~1.2 CELO protocol revenue, 25+ unique active workers daily** |
+| Mainnet v2 status | **LIVE** at `0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423`, Celoscan-verified, allowToken applied for cUSD/CELO/USDC. **As of 2026-05-24 (read on-chain): 76 of 92 bounties resolved, 1.52 CELO protocol fees, 30 operator-run validation wallets, `uniquePosterCount = 1`.** All activity is protocol-operated dogfooding, not third-party adoption — label it that way everywhere. |
 
 ## Repo structure
 
 | Path | Status | Notes |
 |------|--------|-------|
 | `contracts/` | v2 LIVE mainnet + Sepolia | Foundry, Solidity 0.8.24, OZ v5 |
-| `apps/web/` | needs v2 wire-up | Next.js 15 MiniPay app (landing renders; mainnet stats wiring pending) |
+| `apps/web/` | v2 LIVE | Next.js 15 MiniPay app wired to mainnet (post / feed / detail / worker / revenue + MiniPay + Privy) |
 | `apps/relayer/` | planned (Day 5) | Hono + SQLite indexer + CI verifier |
 | `packages/worker/` | planned (Day 4) | `@yeheskieltame/claudelance-worker` Claude Code CLI |
-| `packages/types/` | v0.3.0 LIVE on npmjs + GH Packages | `@yeheskieltame/claudelance-types` shared ABI + types (mainnet + Sepolia) |
-| `packages/sdk/` | v0.3.0 LIVE on npmjs + GH Packages | `@yeheskieltame/claudelance-sdk` agent client |
+| `packages/types/` | v0.4.2 LIVE on npmjs + GH Packages | `@yeheskieltame/claudelance-types` shared ABI + types (mainnet + Sepolia) |
+| `packages/sdk/` | v0.4.3 LIVE on npmjs + GH Packages | `@yeheskieltame/claudelance-sdk` agent client |
 | `packages/contracts/` | planned (Day 9) | `@yeheskieltame/claudelance-contracts` ABI artifacts |
 | `packages/react/` | planned (Day 13) | `claudelance-react` hooks |
 | `packages/cli/` | planned (Day 15) | `@yeheskieltame/claudelance-cli` (binaries `claudelance` and `cln`) |
@@ -141,12 +141,14 @@ Per-bounty tx count: posting + N claims + N submits + N attests + pickWinner + N
 
 Built-in skills relevant: `/security-review` (run before every contract commit), `/review` (worker PR review), `/init`.
 
-## Submission scoring axes (always optimize for these)
+## Proof of Ship scoring axes (what the program measures)
 
-1. **Onchain** — Celo mainnet tx, unique users, contract activity (target 1,945+ tx)
-2. **GitHub** — commits, PRs, stars, contributions (target 150+ commits, 100+ PRs)
-3. **Revenue** — value transacted + fees (target $250+ volume, $5+ fee)
-4. **npm** — packages + weekly downloads (6 packages, 50+ downloads)
+1. **Onchain** — Celo mainnet tx, unique users, contract activity
+2. **GitHub** — commits, PRs, stars, contributions
+3. **Revenue** — value transacted + fees
+4. **npm** — packages + weekly downloads
+
+These are the program's published axes. Report them honestly: on-chain activity to date is operator-run validation (label it as such — never present it as organic adoption or customer revenue), and all submission copy must match the verifiable on-chain state.
 
 Eligibility gates that must pass: MiniPay-compatible (`useMiniPayDetection`), Celo mainnet deploy (verified Celoscan, **done**), Talent Protocol + KarmaGAP submission.
 
@@ -154,9 +156,9 @@ Eligibility gates that must pass: MiniPay-compatible (`useMiniPayDetection`), Ce
 
 - Treat Blueprint.md as authoritative for decisions; ask before deviating.
 - Smart contracts are immutable on mainnet. Every contract diff goes through `/security-review`, Slither, and the invariant suite (`forge test --match-path "test/invariant/*"`) before commit.
-- All post-Day-1 changes ship via `kiel-dev` branch, then PR, then self-review, then `gh pr merge --merge --delete-branch`. Per-file commits are preferred; per-context PRs are preferred over kitchen-sink PRs (more commits + PRs improve hackathon scoring).
+- All post-Day-1 changes ship via `kiel-dev` branch, then PR, then self-review, then `gh pr merge --merge --delete-branch`. Per-file commits are preferred; per-context PRs are preferred over kitchen-sink PRs (keeps history reviewable).
 - PR descriptions on worker-generated PRs MUST include: `Closes #<issue>`, `Claudelance Bounty: #<id>`, `Agent: claudelance-worker-#<id>`.
-- **Bounty issue policy (2026-05-17 onward):** any new bounty starts as a `postDirectHire` on-chain call targeting one of the 30 local workers under `./claudelance worker/`. The corresponding GitHub issue is informational only (links the on-chain bountyId + repo URL + spec). NEVER add `bounty-open` / `help-wanted` labels that invite public contributors. If an external contributor self-submits a PR to a direct-hire bounty, close with a friendly explanation that the bounty is targeted; offer them a future direct-hire slot if their PR is high-quality.
+- **Bounty issue policy (2026-05-17 onward):** new bounties run as `postDirectHire` on-chain calls to the operator's own validation agents under `./claudelance worker/` (local, gitignored). The matching GitHub issue is informational (links the on-chain bountyId + repo URL + spec). These are operator dogfooding runs, not open calls for public contributors, so they are not labeled `bounty-open` / `help-wanted`. If an external contributor self-submits, tell them honestly that current bounties are operator-run validation, and point them to the open `postBounty` path when real public rounds reopen.
 - Worker rate limit: 30 GitHub req/min.
 - Mainnet broadcasts go through `--verify` against Celoscan (Etherscan API V2).
 - Indonesian (Bahasa) is fine in chat; code, comments, commit messages stay in English.

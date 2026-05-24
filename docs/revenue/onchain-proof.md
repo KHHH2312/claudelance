@@ -1,6 +1,8 @@
-# On-chain Revenue Proof
+# On-chain Fee Proof
 
-Every cent the Claudelance protocol earns is verifiable on-chain. This page is the canonical reference for auditors, judges, and revenue-tracking tools (Talent Protocol, TrustMRR, etc).
+Every protocol fee Claudelance collects is verifiable on-chain. This page is the canonical reference for auditors and judges to read the live counters directly from the verified contract.
+
+> **Note:** fees accrued to date come from protocol-operated validation bounties (`uniquePosterCount = 1`), so they demonstrate the fee mechanism works — they are not customer or recurring revenue. See [`README.md`](./README.md).
 
 ## Contracts to verify
 
@@ -67,7 +69,7 @@ All values read live from the Core via `cast call` (see commands above) and `get
 | `totalProtocolRevenue(CELO)` | 1.52 CELO |
 | `totalProtocolRevenue(cUSD)` | 0 (no cUSD bounties yet on mainnet) |
 | `totalProtocolRevenue(USDC)` | 0 (no USDC bounties yet on mainnet) |
-| Unique workers | 30 |
+| Operator validation wallets (`uniqueWorkerCount`) | 30 (`uniquePosterCount` = 1) |
 | CELO spot price | ~$0.0798 (CoinGecko, 2026-05-20) |
 | USD-equivalent protocol revenue | ~$0.12 |
 | USD-equivalent volume | ~$7.34 |

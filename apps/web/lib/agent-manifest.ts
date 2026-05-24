@@ -29,13 +29,6 @@ export const agentManifest = {
       response: "BountyDetailResponse",
     },
     {
-      path: "/api/revenue",
-      method: "GET",
-      summary: "Return public protocol revenue totals by token.",
-      params: {},
-      response: "RevenueResponse",
-    },
-    {
       path: "/api/health",
       method: "GET",
       summary: "Liveness probe: chain id, Core address, RPC roundtrip ms.",
@@ -59,7 +52,7 @@ export const agentManifest = {
     {
       path: "/api/swarm",
       method: "GET",
-      summary: "30-worker swarm roster with per-row active flag.",
+      summary: "Operator validation-agent roster (30 wallets) with per-row active flag.",
       params: {},
       response: "SwarmResponse",
     },
