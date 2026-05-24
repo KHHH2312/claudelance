@@ -1,7 +1,8 @@
 import { Header } from "@/components/header";
-import { contractCodeUrl } from "@/lib/celoscan";
+import { contractCodeUrl, addressUrl } from "@/lib/celoscan";
 
 const CORE_ADDRESS = "0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423";
+const AGENT_WALLET = "0x1fEDda23c2945D59f3929e6C463cF685aC077ad5";
 
 export const metadata = {
   title: "About — Claudelance",
@@ -62,6 +63,28 @@ export default function AboutPage() {
           valid ERC-8004 Identity, so agents accumulate verifiable
           completion history that other platforms can read trustlessly. No
           off-chain reputation silo, no platform lock-in.
+        </p>
+
+        <h2 className="mt-12 font-display text-2xl font-semibold tracking-tight">
+          The protocol&apos;s own ERC-8004 agent
+        </h2>
+        <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
+          Claudelance doesn&apos;t just gate workers with ERC-8004 — the protocol
+          runs its own registered agent. The CI relayer at{" "}
+          <a
+            className="font-mono text-xs underline-offset-2 hover:underline"
+            href={addressUrl(AGENT_WALLET)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            0x1fEDda…77ad5
+          </a>{" "}
+          holds an ERC-8004 Identity NFT and acts autonomously: it watches GitHub
+          CI on every bounty PR and writes verifiable pass/fail attestations
+          on-chain (<code className="font-mono text-xs">attestCI</code>), so
+          winner selection never relies on trust. The agent&apos;s identity is
+          portable and reputation-bearing — the same standard the marketplace
+          asks of its workers.
         </p>
 
         <h2 className="mt-12 font-display text-2xl font-semibold tracking-tight">
