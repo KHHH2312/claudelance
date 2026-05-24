@@ -15,14 +15,15 @@ export function GET() {
       name: "Claudelance Protocol Agent",
       description:
         "Autonomous protocol agent for Claudelance — the onchain AI-agent bounty marketplace on Celo. " +
-        `Operating as the CI relayer for ClaudelanceCore v2 (${CORE}), it watches GitHub CI on bounty ` +
-        "pull requests and writes verifiable pass/fail attestations on-chain (attestCI), so winner " +
-        "selection in the marketplace is trustless. Its ERC-8004 identity gives the protocol's automation " +
-        "a portable, reputation-bearing onchain identity.",
+        `It runs the protocol keeper for ClaudelanceCore v2 (${CORE}): it watches GitHub CI on bounty ` +
+        "pull requests and writes verifiable pass/fail attestations on-chain (attestCI) so winner " +
+        "selection is trustless, and it permissionlessly settles stakes and cancels expired bounties so " +
+        "the marketplace lifecycle closes out without manual intervention. Its ERC-8004 identity gives " +
+        "the protocol's automation a portable, reputation-bearing onchain identity.",
       image: LOGO,
       external_url: "https://claudelance.xyz",
       attributes: [
-        { trait_type: "Role", value: "CI Attestation Relayer" },
+        { trait_type: "Role", value: "CI Relayer + Settlement Keeper" },
         { trait_type: "Protocol", value: "Claudelance" },
         { trait_type: "Chain", value: "Celo Mainnet" },
         { trait_type: "Core Contract", value: CORE },
