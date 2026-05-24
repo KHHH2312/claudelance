@@ -42,6 +42,9 @@ import { cn } from "@/lib/utils";
 type TokenSymbol = "cUSD" | "CELO" | "USDC";
 type TxMode = "approve" | "post";
 
+// Mirrors on-chain minBounty(token) on mainnet core 0x1362d8…E423.
+const TOKEN_MIN: Record<TokenSymbol, string> = { cUSD: "0.5", CELO: "1", USDC: "0.5" };
+
 type FormState = {
   token: TokenSymbol;
   amount: string;
@@ -85,10 +88,15 @@ const steps = [
   { id: 3, label: "Review", icon: ClipboardCheck },
 ] as const;
 
-const tokenStepSchema = z.object({
+const tokenStepObject = z.object({
   token: z.enum(["cUSD", "CELO", "USDC"]),
   amount: z.string().refine((value) => isPositiveDecimal(value), "Enter a reward amount greater than zero."),
 });
+
+const tokenStepSchema = tokenStepObject.refine(
+  (v) => meetsMinAmount(v.token, v.amount),
+  (v) => ({ message: `Minimum bounty is ${TOKEN_MIN[v.token]} ${v.token}.`, path: ["amount"] }),
+);
 
 const linksStepSchema = z.object({
   repoUrl: z
@@ -105,7 +113,7 @@ const rulesStepSchema = z.object({
   stake: z.string().refine((value) => isPositiveDecimal(value), "Enter a stake greater than zero."),
   maxSlots: z
     .string()
-    .refine((value) => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 255, "Use 1 to 255 slots."),
+    .refine((value) => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 20, "Use 1 to 20 slots."),
   deadline: z.string().refine((value) => {
     const time = Date.parse(value);
     if (!Number.isFinite(time)) return false;
@@ -115,9 +123,14 @@ const rulesStepSchema = z.object({
   ciRequired: z.boolean(),
 });
 
-const formSchema = tokenStepSchema.merge(linksStepSchema).merge(rulesStepSchema).extend({
-  alreadyApproved: z.boolean(),
-});
+const formSchema = tokenStepObject
+  .merge(linksStepSchema)
+  .merge(rulesStepSchema)
+  .extend({ alreadyApproved: z.boolean() })
+  .refine(
+    (v) => meetsMinAmount(v.token, v.amount),
+    (v) => ({ message: `Minimum bounty is ${TOKEN_MIN[v.token]} ${v.token}.`, path: ["amount"] }),
+  );
 
 const initialState: FormState = {
   token: "CELO",
@@ -468,6 +481,9 @@ function TokenStep({
         />
         <MiniPayBalanceCard token={tokenAddress} tokenSymbol={values.token} />
       </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Minimum bounty: {TOKEN_MIN[values.token]} {values.token}
+      </p>
     </div>
   );
 }
@@ -755,6 +771,16 @@ function tokenConfig(symbol: TokenSymbol, deployment: typeof MAINNET) {
 function isPositiveDecimal(value: string) {
   if (!/^\d+(\.\d+)?$/.test(value.trim())) return false;
   return Number(value) > 0;
+}
+
+function meetsMinAmount(token: TokenSymbol, amount: string) {
+  if (!isPositiveDecimal(amount)) return true;
+  const decimals = token === "USDC" ? 6 : 18;
+  try {
+    return parseUnits(amount, decimals) >= parseUnits(TOKEN_MIN[token], decimals);
+  } catch {
+    return false;
+  }
 }
 
 function normalizedUrl(value: string) {
