@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 
 import { BottomNav } from "@/components/bottom-nav";
 import { InstallPrompt } from "@/components/install-prompt";
@@ -10,10 +9,12 @@ import { StructuredData } from "@/components/structured-data";
 import { Providers } from "./providers";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({
+const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+
+const display = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["600", "700", "800"],
+  weight: ["500", "600", "700"],
   display: "swap",
 });
 
@@ -80,14 +81,14 @@ export const viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F5F6FA" },
-    { media: "(prefers-color-scheme: dark)", color: "#06070F" },
+    { media: "(prefers-color-scheme: light)", color: "#FBFAF7" },
+    { media: "(prefers-color-scheme: dark)", color: "#121010" },
   ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable} ${display.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${sans.variable} ${GeistMono.variable} ${display.variable}`}>
       <body className="mobile-shell safe-area-bottom min-h-svh font-sans md:pb-0">
         <Providers>
           {children}
