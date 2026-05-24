@@ -221,10 +221,14 @@ function PostBountyForm() {
     query: { enabled: Boolean(address) && onReview },
   });
 
-  const { isLoading: isApproveConfirming, isSuccess: isApproveConfirmed } =
+  const { isLoading: isApproveConfirming, data: approveReceipt } =
     useWaitForTransactionReceipt({ hash: approveHash ?? undefined, chainId: writeChainId });
-  const { isLoading: isPostConfirming, isSuccess: isPostConfirmed } =
+  const { isLoading: isPostConfirming, data: postReceipt } =
     useWaitForTransactionReceipt({ hash: postHash ?? undefined, chainId: writeChainId });
+  // Gate on the on-chain status, not just "receipt fetched": a mined-but-reverted
+  // tx still resolves the receipt, and must not read as success.
+  const isApproveConfirmed = approveReceipt?.status === "success";
+  const isPostConfirmed = postReceipt?.status === "success";
 
   // Re-read allowance once the approval is mined, so Post unlocks exactly when
   // the on-chain allowance is actually sufficient — not when the tx was sent.
