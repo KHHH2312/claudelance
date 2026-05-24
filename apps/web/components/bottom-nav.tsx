@@ -2,41 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Rss, SquarePen, UserCircle } from "lucide-react";
 
+import { PRIMARY_NAV } from "@/lib/nav";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { label: "Home", href: "/", icon: Home, match: (path: string) => path === "/" },
-  {
-    label: "Bounties",
-    href: "/bounties",
-    icon: Rss,
-    match: (path: string) =>
-      path === "/bounties" ||
-      path.startsWith("/bounties/") ||
-      path.startsWith("/bounty/"),
-  },
-  { label: "Post", href: "/post", icon: SquarePen, match: startsWith("/post") },
-  {
-    label: "Profile",
-    href: "/worker/me",
-    icon: UserCircle,
-    match: startsWith("/worker"),
-  },
-] as const;
 
 export function BottomNav() {
   const pathname = usePathname() || "/";
 
   return (
     <nav
-      aria-label="Primary mobile navigation"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/92 px-3 pt-2 shadow-[0_-16px_40px_-24px_rgba(15,23,42,0.55)] backdrop-blur-xl md:hidden"
-      style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+      aria-label="Primary"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl md:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="mx-auto grid max-w-md grid-cols-4 gap-1">
-        {navItems.map(({ label, href, icon: Icon, match }) => {
+      <ul className="mx-auto grid max-w-md grid-cols-5">
+        {PRIMARY_NAV.map(({ href, label, icon: Icon, match }) => {
           const active = match(pathname);
           return (
             <li key={href}>
@@ -44,12 +24,19 @@ export function BottomNav() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-medium text-muted-foreground transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  active && "bg-primary text-primary-foreground shadow-glow",
+                  "group relative flex h-16 flex-col items-center justify-center gap-1 text-[0.6rem] font-medium uppercase tracking-wide transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Icon aria-hidden="true" className="h-5 w-5" strokeWidth={2.2} />
+                <span
+                  aria-hidden
+                  className={cn(
+                    "absolute inset-x-3 top-0 h-0.5 rounded-full transition-colors",
+                    active ? "bg-primary" : "bg-transparent",
+                  )}
+                />
+                <Icon className="h-5 w-5" strokeWidth={active ? 2.4 : 2} aria-hidden />
                 <span>{label}</span>
               </Link>
             </li>
@@ -58,8 +45,4 @@ export function BottomNav() {
       </ul>
     </nav>
   );
-}
-
-function startsWith(prefix: string) {
-  return (path: string) => path === prefix || path.startsWith(`${prefix}/`);
 }
