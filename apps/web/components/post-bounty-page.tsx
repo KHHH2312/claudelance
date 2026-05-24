@@ -25,6 +25,8 @@ import {
   useAccount,
   useConnect,
   useDisconnect,
+  useReadContract,
+  useWaitForTransactionReceipt,
   useWriteContract,
   WagmiProvider,
 } from "wagmi";
@@ -40,7 +42,7 @@ import { miniPayFeeCurrency } from "@/lib/wallet/fee-currency";
 import { cn } from "@/lib/utils";
 
 type TokenSymbol = "cUSD" | "CELO" | "USDC";
-type TxMode = "approve" | "post";
+type PendingAction = "approve" | "post";
 
 // Mirrors on-chain minBounty(token) on mainnet core 0x1362d8…E423.
 const TOKEN_MIN: Record<TokenSymbol, string> = { cUSD: "0.5", CELO: "1", USDC: "0.5" };
@@ -54,7 +56,6 @@ type FormState = {
   maxSlots: string;
   deadline: string;
   ciRequired: boolean;
-  alreadyApproved: boolean;
 };
 
 const queryClient = new QueryClient();
@@ -78,6 +79,23 @@ const erc20Abi = [
     ],
     outputs: [{ name: "", type: "bool" }],
     stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "allowance",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
   },
 ] as const;
 
@@ -126,7 +144,6 @@ const rulesStepSchema = z.object({
 const formSchema = tokenStepObject
   .merge(linksStepSchema)
   .merge(rulesStepSchema)
-  .extend({ alreadyApproved: z.boolean() })
   .refine(
     (v) => meetsMinAmount(v.token, v.amount),
     (v) => ({ message: `Minimum bounty is ${TOKEN_MIN[v.token]} ${v.token}.`, path: ["amount"] }),
@@ -141,7 +158,6 @@ const initialState: FormState = {
   maxSlots: "3",
   deadline: defaultDeadline(),
   ciRequired: true,
-  alreadyApproved: false,
 };
 
 export function PostBountyPage() {
@@ -177,21 +193,67 @@ function PostBountyForm() {
   }, [connect, connectors, isConnected]);
   const [values, setValues] = React.useState<FormState>(initialState);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [txHash, setTxHash] = React.useState<Hash | null>(null);
-  const [txMode, setTxMode] = React.useState<TxMode>("approve");
-  const [approvalSubmitted, setApprovalSubmitted] = React.useState(false);
+  const [approveHash, setApproveHash] = React.useState<Hash | null>(null);
+  const [postHash, setPostHash] = React.useState<Hash | null>(null);
+  const [pendingAction, setPendingAction] = React.useState<PendingAction | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
 
   const token = tokenConfig(values.token, deployment);
   const parsed = React.useMemo(() => parseForm(values, deployment), [deployment, values]);
-  const canPost = values.alreadyApproved || approvalSubmitted;
+  const onReview = step === 3;
 
-  useTransactionToast(txHash, {
+  // The poster escrows only the reward `amount` (the worker stake is pulled
+  // from workers on claim), so allowance + balance are checked against `amount`.
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: token.address,
+    abi: erc20Abi,
+    functionName: "allowance",
+    args: address ? [address, deployment.core] : undefined,
     chainId: writeChainId,
-    pendingMessage: txMode === "approve" ? "Approving bounty token" : "Posting bounty",
-    confirmedMessage: txMode === "approve" ? "Token approved" : "Bounty posted",
-    failedMessage: txMode === "approve" ? "Approval failed" : "Post bounty failed",
-    toastId: txHash ? `b50:${txMode}:${txHash}` : undefined,
+    query: { enabled: Boolean(address) && onReview },
+  });
+  const { data: balance } = useReadContract({
+    address: token.address,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    chainId: writeChainId,
+    query: { enabled: Boolean(address) && onReview },
+  });
+
+  const { isLoading: isApproveConfirming, data: approveReceipt } =
+    useWaitForTransactionReceipt({ hash: approveHash ?? undefined, chainId: writeChainId });
+  const { isLoading: isPostConfirming, data: postReceipt } =
+    useWaitForTransactionReceipt({ hash: postHash ?? undefined, chainId: writeChainId });
+  // Gate on the on-chain status, not just "receipt fetched": a mined-but-reverted
+  // tx still resolves the receipt, and must not read as success.
+  const isApproveConfirmed = approveReceipt?.status === "success";
+  const isPostConfirmed = postReceipt?.status === "success";
+
+  // Re-read allowance once the approval is mined, so Post unlocks exactly when
+  // the on-chain allowance is actually sufficient — not when the tx was sent.
+  React.useEffect(() => {
+    if (isApproveConfirmed) void refetchAllowance();
+  }, [isApproveConfirmed, refetchAllowance]);
+
+  const needsApproval = parsed && allowance !== undefined ? allowance < parsed.amount : true;
+  const hasBalance = parsed && balance !== undefined ? balance >= parsed.amount : true;
+  const isApproving = pendingAction === "approve" && (isWriting || isApproveConfirming);
+  const isPosting = pendingAction === "post" && (isWriting || isPostConfirming);
+
+  useTransactionToast(approveHash, {
+    chainId: writeChainId,
+    pendingMessage: "Approving bounty token",
+    confirmedMessage: "Token approved",
+    failedMessage: "Approval failed",
+    toastId: approveHash ? `post:approve:${approveHash}` : undefined,
+  });
+  useTransactionToast(postHash, {
+    chainId: writeChainId,
+    pendingMessage: "Posting bounty",
+    confirmedMessage: "Bounty posted",
+    failedMessage: "Post bounty failed",
+    toastId: postHash ? `post:post:${postHash}` : undefined,
   });
 
   const connectInjected = () => {
@@ -206,7 +268,6 @@ function PostBountyForm() {
       delete next[key];
       return next;
     });
-    if (key === "token" || key === "amount") setApprovalSubmitted(false);
   };
 
   const next = () => {
@@ -228,7 +289,7 @@ function PostBountyForm() {
     }
 
     setActionError(null);
-    setTxMode("approve");
+    setPendingAction("approve");
     try {
       const hash = await writeContractAsync({
         address: token.address,
@@ -238,10 +299,10 @@ function PostBountyForm() {
         chainId: writeChainId,
         feeCurrency: miniPayFeeCurrency(),
       });
-      setTxHash(hash);
-      setApprovalSubmitted(true);
+      setApproveHash(hash);
     } catch (error) {
       setActionError(getErrorMessage(error));
+      setPendingAction(null);
     }
   };
 
@@ -253,7 +314,7 @@ function PostBountyForm() {
     }
 
     setActionError(null);
-    setTxMode("post");
+    setPendingAction("post");
     try {
       const hash = await writeContractAsync({
         address: deployment.core,
@@ -274,9 +335,10 @@ function PostBountyForm() {
         chainId: writeChainId,
         feeCurrency: miniPayFeeCurrency(),
       });
-      setTxHash(hash);
+      setPostHash(hash);
     } catch (error) {
       setActionError(getErrorMessage(error));
+      setPendingAction(null);
     }
   };
 
@@ -364,13 +426,17 @@ function PostBountyForm() {
               values={values}
               deploymentName={deployment.chainName}
               tokenAddress={token.address}
-              canPost={canPost}
               isConnected={isConnected}
-              isWriting={isWriting}
+              needsApproval={needsApproval}
+              hasBalance={hasBalance}
+              allowanceKnown={allowance !== undefined}
+              isApproving={isApproving}
+              isPosting={isPosting}
+              isPosted={isPostConfirmed}
+              postHash={postHash}
               onApprove={approveToken}
               onPost={postBounty}
               onConnect={connectInjected}
-              onToggleAlreadyApproved={(alreadyApproved) => update("alreadyApproved", alreadyApproved)}
               actionError={actionError}
             />
           ) : null}
@@ -578,41 +644,79 @@ function ReviewStep({
   values,
   deploymentName,
   tokenAddress,
-  canPost,
   isConnected,
-  isWriting,
+  needsApproval,
+  hasBalance,
+  allowanceKnown,
+  isApproving,
+  isPosting,
+  isPosted,
+  postHash,
   onApprove,
   onPost,
   onConnect,
-  onToggleAlreadyApproved,
   actionError,
 }: {
   values: FormState;
   deploymentName: string;
   tokenAddress: Address;
-  canPost: boolean;
   isConnected: boolean;
-  isWriting: boolean;
+  needsApproval: boolean;
+  hasBalance: boolean;
+  allowanceKnown: boolean;
+  isApproving: boolean;
+  isPosting: boolean;
+  isPosted: boolean;
+  postHash: Hash | null;
   onApprove: () => Promise<void>;
   onPost: () => Promise<void>;
   onConnect: () => void;
-  onToggleAlreadyApproved: (value: boolean) => void;
   actionError: string | null;
 }) {
+  if (isPosted) {
+    return (
+      <div>
+        <StepHeading title="Bounty posted" description="The reward is escrowed onchain and the bounty is open for workers." />
+        <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-6 text-center">
+          <CheckCircle2 className="mx-auto h-10 w-10 text-primary" aria-hidden />
+          <p className="mt-3 font-display text-lg font-semibold">Escrow funded, bounty live</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {values.amount} {values.token} is held by the contract until you pick a winner.
+          </p>
+          {postHash ? (
+            <a
+              href={`https://celoscan.io/tx/${postHash}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-block break-all font-mono text-xs text-primary hover:underline"
+            >
+              {postHash} ↗
+            </a>
+          ) : null}
+          <div className="mt-5">
+            <Button asChild>
+              <Link href="/bounties">View bounties</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const rows = [
     ["Network", deploymentName],
-    ["Token", values.token],
     ["Reward", `${values.amount} ${values.token}`],
-    ["Stake", `${values.stake} ${values.token}`],
+    ["Worker stake", `${values.stake} ${values.token}`],
     ["Max slots", values.maxSlots],
     ["Deadline", formatDateTime(values.deadline)],
     ["CI", values.ciRequired ? "Required" : "Manual review"],
-    ["Token contract", tokenAddress],
+    ["Token", `${values.token} · ${tokenAddress}`],
   ];
+  const approved = allowanceKnown && !needsApproval;
 
   return (
     <div>
-      <StepHeading title="Review and confirm" description="Approve the token, then post the bounty onchain." />
+      <StepHeading title="Review, fund, and post" description="Confirm the details, approve the escrow, then post the bounty onchain." />
       <div className="mt-6 grid gap-3">
         {rows.map(([label, value]) => (
           <div key={label} className="grid gap-1 rounded-xl border bg-background px-4 py-3 sm:grid-cols-[160px_minmax(0,1fr)]">
@@ -634,42 +738,111 @@ function ReviewStep({
         </div>
       </div>
 
-      <label className="mt-5 flex items-center gap-3 rounded-xl border bg-background px-4 py-3 text-sm">
-        <input
-          type="checkbox"
-          checked={values.alreadyApproved}
-          onChange={(event) => onToggleAlreadyApproved(event.target.checked)}
-          className="h-4 w-4 rounded border-border accent-primary"
-        />
-        I already approved this token for the Claudelance core contract.
-      </label>
+      <div className="mt-6 rounded-2xl border border-border bg-background p-5">
+        <p className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">Fund &amp; post</p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          Claudelance escrows your reward inside the contract. A one-time ERC-20 approval lets the Core
+          pull exactly{" "}
+          <span className="font-semibold text-foreground">
+            {values.amount} {values.token}
+          </span>{" "}
+          when you post — that is how every onchain escrow works. You keep custody of the tokens until the post transaction.
+        </p>
 
-      {actionError ? (
-        <div className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          {actionError}
-        </div>
-      ) : null}
-
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         {!isConnected ? (
-          <Button type="button" onClick={onConnect}>
+          <Button type="button" className="mt-5" onClick={onConnect}>
             <Wallet className="h-4 w-4" aria-hidden />
             Connect wallet
           </Button>
         ) : (
           <>
-            <Button type="button" variant="outline" onClick={onApprove} disabled={isWriting}>
-              {isWriting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />}
-              Approve token
-            </Button>
-            <Button type="button" onClick={onPost} disabled={isWriting || !canPost}>
-              {isWriting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ClipboardCheck className="h-4 w-4" aria-hidden />}
-              Post bounty
-            </Button>
+            {!hasBalance ? (
+              <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                Your wallet holds less than {values.amount} {values.token}. Top up before posting.
+              </div>
+            ) : null}
+
+            <ol className="mt-5 space-y-3">
+              <FundStep
+                index={1}
+                title={`Approve ${values.amount} ${values.token}`}
+                description="Lets the contract pull the reward into escrow. One transaction."
+                done={approved}
+                doneLabel="Approved"
+              >
+                <Button type="button" variant="outline" onClick={onApprove} disabled={isApproving}>
+                  {isApproving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />}
+                  {isApproving ? "Approving" : "Approve"}
+                </Button>
+              </FundStep>
+
+              <FundStep
+                index={2}
+                title="Post bounty onchain"
+                description="Escrows the reward and opens the bounty to workers."
+                done={false}
+              >
+                <Button type="button" onClick={onPost} disabled={isPosting || needsApproval || !hasBalance}>
+                  {isPosting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ClipboardCheck className="h-4 w-4" aria-hidden />}
+                  {isPosting ? "Posting" : "Post bounty"}
+                </Button>
+              </FundStep>
+            </ol>
+
+            {needsApproval && allowanceKnown ? (
+              <p className="mt-3 text-xs text-muted-foreground">Post unlocks once the approval is confirmed onchain.</p>
+            ) : null}
           </>
         )}
+
+        {actionError ? (
+          <div className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+            {actionError}
+          </div>
+        ) : null}
       </div>
     </div>
+  );
+}
+
+function FundStep({
+  index,
+  title,
+  description,
+  done,
+  doneLabel,
+  children,
+}: {
+  index: number;
+  title: string;
+  description: string;
+  done: boolean;
+  doneLabel?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3">
+      <span
+        className={cn(
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+          done ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground",
+        )}
+      >
+        {done ? <CheckCircle2 className="h-4 w-4" aria-hidden /> : index}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      {done && doneLabel ? (
+        <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+          <CheckCircle2 className="h-4 w-4" aria-hidden />
+          {doneLabel}
+        </span>
+      ) : (
+        children
+      )}
+    </li>
   );
 }
 
