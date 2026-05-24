@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useTransactionToast } from "@/components/transaction-toast";
 import { DEFAULT_CHAIN_ID } from "@/lib/chain";
 import { formatTokenAmount } from "@/lib/format-token";
+import { miniPayFeeCurrency } from "@/lib/wallet/fee-currency";
 import { cn, shortAddress } from "@/lib/utils";
 
 type Submission = {
@@ -249,6 +250,7 @@ function PickWinnerCard({
         abi: CLAUDELANCE_CORE_ABI,
         functionName: "pickWinner",
         args: [BigInt(bountyId), selected as Address],
+        feeCurrency: miniPayFeeCurrency(),
       })) as Hash;
       setTxHash(hash);
     } catch {
@@ -333,6 +335,7 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
         abi: CLAUDELANCE_CORE_ABI,
         functionName: "submitPR",
         args: [BigInt(bountyId), prUrl, padded, ""],
+        feeCurrency: miniPayFeeCurrency(),
       })) as Hash;
       setTxHash(hash);
     } catch {
@@ -410,6 +413,7 @@ function SettleStakeCard({
         abi: CLAUDELANCE_CORE_ABI,
         functionName: "settleStake",
         args: [BigInt(bountyId), worker],
+        feeCurrency: miniPayFeeCurrency(),
       })) as Hash;
       setTxHash(hash);
     } catch {
@@ -464,6 +468,7 @@ function WithdrawEarningsCard({ token }: { token: string }) {
         abi: CLAUDELANCE_CORE_ABI,
         functionName: "withdrawEarnings",
         args: [token as Address],
+        feeCurrency: miniPayFeeCurrency(),
       })) as Hash;
       setTxHash(hash);
     } catch {
@@ -540,6 +545,7 @@ function ClaimSlotCard({
         abi: CLAUDELANCE_CORE_ABI,
         functionName: "claimSlot",
         args: [BigInt(bountyId)],
+        feeCurrency: miniPayFeeCurrency(),
       })) as Hash;
       setTxHash(hash);
     } catch {

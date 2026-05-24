@@ -36,6 +36,7 @@ import { MiniPayBalanceCard } from "@/components/minipay-balance-card";
 import { useTransactionToast } from "@/components/transaction-toast";
 import { celoMainnet, supportedChains } from "@/lib/chain";
 import { isMiniPay } from "@/lib/wallet/config";
+import { miniPayFeeCurrency } from "@/lib/wallet/fee-currency";
 import { cn } from "@/lib/utils";
 
 type TokenSymbol = "cUSD" | "CELO" | "USDC";
@@ -220,6 +221,7 @@ function PostBountyForm() {
         functionName: "approve",
         args: [deployment.core, parsed.amount],
         chainId: writeChainId,
+        feeCurrency: miniPayFeeCurrency(),
       });
       setTxHash(hash);
       setApprovalSubmitted(true);
@@ -255,6 +257,7 @@ function PostBountyForm() {
           values.ciRequired,
         ],
         chainId: writeChainId,
+        feeCurrency: miniPayFeeCurrency(),
       });
       setTxHash(hash);
     } catch (error) {
