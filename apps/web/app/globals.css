@@ -4,65 +4,67 @@
 
 @layer base {
   :root {
-    --background: 220 18% 97%;
-    --foreground: 228 35% 7%;
+    /* Light editorial canvas — warm near-white, near-black ink, Claude-clay accent */
+    --background: 40 33% 98%;
+    --foreground: 20 14% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 228 35% 7%;
+    --card-foreground: 20 14% 8%;
 
-    --primary: 228 85% 54%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 16 55% 42%;
+    --primary-foreground: 40 33% 98%;
 
-    --secondary: 220 18% 93%;
-    --secondary-foreground: 228 35% 12%;
+    --secondary: 40 20% 95%;
+    --secondary-foreground: 20 14% 14%;
 
-    --muted: 220 15% 92%;
-    --muted-foreground: 228 12% 44%;
+    --muted: 40 18% 94%;
+    --muted-foreground: 25 8% 42%;
 
-    --accent: 220 18% 90%;
-    --accent-foreground: 228 35% 12%;
+    --accent: 40 20% 95%;
+    --accent-foreground: 20 14% 14%;
 
-    --destructive: 0 72% 52%;
+    --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 16% 88%;
-    --input: 220 16% 88%;
-    --ring: 228 85% 54%;
+    --border: 40 14% 89%;
+    --input: 40 14% 89%;
+    --ring: 16 55% 42%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    --glass-bg: 0 0% 100% / 0.65;
-    --glass-border: 220 20% 86% / 1;
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 40 14% 89% / 1;
   }
 
   .dark {
-    --background: 228 38% 4%;
-    --foreground: 220 18% 93%;
+    /* Warm dark counterpart of the editorial palette */
+    --background: 24 12% 6%;
+    --foreground: 40 20% 92%;
 
-    --card: 228 30% 7%;
-    --card-foreground: 220 18% 93%;
+    --card: 24 10% 9%;
+    --card-foreground: 40 20% 92%;
 
-    --primary: 62 100% 63%;
-    --primary-foreground: 228 38% 4%;
+    --primary: 18 75% 58%;
+    --primary-foreground: 24 12% 6%;
 
-    --secondary: 228 26% 12%;
-    --secondary-foreground: 220 18% 93%;
+    --secondary: 24 10% 13%;
+    --secondary-foreground: 40 20% 92%;
 
-    --muted: 228 26% 11%;
-    --muted-foreground: 220 12% 54%;
+    --muted: 24 10% 13%;
+    --muted-foreground: 30 8% 60%;
 
-    --accent: 228 26% 15%;
-    --accent-foreground: 220 18% 93%;
+    --accent: 24 10% 15%;
+    --accent-foreground: 40 20% 92%;
 
-    --destructive: 0 62% 52%;
-    --destructive-foreground: 220 18% 93%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 40 20% 92%;
 
-    --border: 228 24% 13%;
-    --input: 228 24% 13%;
-    --ring: 62 100% 63%;
+    --border: 24 9% 17%;
+    --input: 24 9% 17%;
+    --ring: 18 75% 58%;
 
-    --glass-bg: 228 30% 6% / 0.82;
-    --glass-border: 220 100% 100% / 0.055;
+    --glass-bg: 24 10% 9% / 0.82;
+    --glass-border: 40 20% 100% / 0.06;
   }
 
   * {
@@ -84,8 +86,7 @@
 
   .dark body {
     background-image:
-      radial-gradient(ellipse 65% 40% at 95% -5%, hsl(62 100% 60% / 0.055), transparent 55%),
-      radial-gradient(ellipse 50% 35% at 0% 75%, hsl(228 70% 55% / 0.04), transparent 55%);
+      radial-gradient(ellipse 60% 40% at 90% -5%, hsl(18 75% 55% / 0.05), transparent 55%);
     background-attachment: fixed;
   }
 }
