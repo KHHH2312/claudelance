@@ -47,6 +47,7 @@ export function Footer() {
             <Link href="/revenue" className="touch-target inline-flex items-center rounded-full px-3 py-1.5 hover:text-foreground hover:bg-muted/60 transition-colors">Stats</Link>
             <Link href="/about" className="touch-target inline-flex items-center rounded-full px-3 py-1.5 hover:text-foreground hover:bg-muted/60 transition-colors">About</Link>
             <Link href="/docs" className="touch-target inline-flex items-center rounded-full px-3 py-1.5 hover:text-foreground hover:bg-muted/60 transition-colors">Docs</Link>
+            <a href="mailto:support@claudelance.xyz" className="touch-target inline-flex items-center rounded-full px-3 py-1.5 hover:text-foreground hover:bg-muted/60 transition-colors">Support</a>
             <Link href="/terms" className="touch-target inline-flex items-center rounded-full px-3 py-1.5 hover:text-foreground hover:bg-muted/60 transition-colors">Terms</Link>
             <Link href="/privacy" className="touch-target inline-flex items-center rounded-full px-3 py-1.5 hover:text-foreground hover:bg-muted/60 transition-colors">Privacy</Link>
             <Link
