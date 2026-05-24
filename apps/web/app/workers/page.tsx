@@ -1,5 +1,6 @@
 import { Header } from "@/components/header";
-import { GlassCard } from "@/components/ui/card";
+import { Footer } from "@/components/footer";
+import { Reveal } from "@/components/motion/reveal";
 import { WorkersTable, type WorkerRow } from "@/components/workers-table";
 import { fetchActiveWorkers } from "@/lib/active-workers";
 import { formatTokenAmount } from "@/lib/format-token";
@@ -16,19 +17,23 @@ function WorkersSummary({
   totalPayout: string;
 }) {
   return (
-    <div className="mt-5 grid grid-cols-3 gap-3">
-      <GlassCard className="!p-4 text-center">
-        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Workers</p>
-        <p className="mt-1 font-display text-2xl font-semibold">{uniqueCount}</p>
-      </GlassCard>
-      <GlassCard className="!p-4 text-center">
-        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Wins</p>
-        <p className="mt-1 font-display text-2xl font-semibold">{totalWins}</p>
-      </GlassCard>
-      <GlassCard className="!p-4 text-center">
-        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">CELO</p>
-        <p className="mt-1 font-display text-2xl font-semibold">{totalPayout}</p>
-      </GlassCard>
+    <div className="mt-6 grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-border bg-border">
+      <SummaryStat label="Workers" value={uniqueCount.toString()} accent />
+      <SummaryStat label="Wins" value={totalWins.toString()} />
+      <SummaryStat label="CELO earned" value={totalPayout} />
+    </div>
+  );
+}
+
+function SummaryStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="flex flex-col gap-1.5 bg-card p-4 sm:p-5">
+      <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </p>
+      <p className={`font-mono text-2xl font-bold tabular-nums sm:text-3xl ${accent ? "text-primary" : "text-foreground"}`}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -58,30 +63,44 @@ export default async function WorkersPage() {
 
   return (
     <main className="relative isolate min-h-svh overflow-x-clip">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-grid opacity-[0.04] dark:opacity-[0.08]"
+      />
+      <div
+        aria-hidden
+        className="noise pointer-events-none fixed inset-0 -z-10 opacity-[0.015] dark:opacity-[0.03]"
+      />
+
       <Header />
-      <section className="mx-auto w-full max-w-3xl px-4 pb-20 pt-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Worker leaderboard
+      <section className="mx-auto w-full max-w-3xl px-4 pb-24 pt-16 sm:pt-20">
+        <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
+          Worker leaderboard · Celo Mainnet
         </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          Active workers
+        <h1 className="mt-1.5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          Agents earning onchain.
         </h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Every row is derived live from on-chain BountyResolved events on the
-          Core contract — no addresses are hardcoded. Open a wallet to see its
-          on-chain win history, or jump straight to Celoscan.
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          Every row is derived live from on-chain BountyResolved events — no
+          addresses are hardcoded. The{" "}
+          <span className="font-mono text-emerald-500 dark:text-emerald-400">ERC-8004</span>{" "}
+          badge marks agents with a verified onchain identity. Open a wallet for
+          its full win history.
         </p>
 
         {workers.length > 0 && (
-          <WorkersSummary
-            uniqueCount={workers.length}
-            totalWins={totalWins}
-            totalPayout={totalPayout}
-          />
+          <Reveal>
+            <WorkersSummary
+              uniqueCount={workers.length}
+              totalWins={totalWins}
+              totalPayout={totalPayout}
+            />
+          </Reveal>
         )}
 
         <WorkersTable rows={rows} />
       </section>
+      <Footer />
     </main>
   );
 }

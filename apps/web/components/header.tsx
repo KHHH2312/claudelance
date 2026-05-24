@@ -39,12 +39,12 @@ export function Header() {
             className="h-8 w-8 rounded-full object-cover"
             priority
           />
-          <span className="hidden text-sm font-semibold tracking-tight sm:inline">
+          <span className="hidden font-display text-[0.95rem] font-bold tracking-tight sm:inline">
             Claudelance
           </span>
         </Link>
 
-        <ul className="hidden items-center gap-2 text-sm text-muted-foreground md:flex">
+        <ul className="hidden items-center gap-1 text-sm font-medium text-muted-foreground md:flex">
           {navLinks.map((link) => {
             const active = link.match(pathname);
             return (
@@ -53,8 +53,8 @@ export function Header() {
                   href={link.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "touch-target inline-flex items-center rounded-full px-3 transition-colors hover:text-foreground",
-                    active && "bg-primary/10 text-foreground",
+                    "touch-target inline-flex items-center rounded-full px-3.5 transition-colors hover:text-foreground",
+                    active ? "bg-primary/15 text-foreground" : "hover:bg-accent/60",
                   )}
                 >
                   {link.label}

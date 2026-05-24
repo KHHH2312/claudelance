@@ -1,28 +1,34 @@
 import { fetchTreasuryRevenue } from "@/lib/revenue";
-import { tokenToUsd } from "@/lib/usd-conversion";
+import { getCeloUsdPrice } from "@/lib/price";
+import { formatTokenAmount } from "@/lib/format-token";
 
 export async function RevenueCard() {
-  const r = await fetchTreasuryRevenue();
-  const usdTotal =
-    tokenToUsd("cUSD", r.cUSD) +
-    tokenToUsd("CELO", r.CELO) +
-    tokenToUsd("USDC", r.USDC);
+  const [r, celoUsd] = await Promise.all([fetchTreasuryRevenue(), getCeloUsdPrice()]);
+
+  const cusdUsd = Number(r.cUSD) / 1e18;
+  const usdcUsd = Number(r.USDC) / 1e6;
+  const celoUsdValue = (Number(r.CELO) / 1e18) * celoUsd;
+  const usdTotal = cusdUsd + usdcUsd + celoUsdValue;
 
   return (
-    <div className="glass mt-10 rounded-3xl p-8">
-      <h2 className="font-display text-2xl font-semibold tracking-tight">
-        Total treasury revenue
-      </h2>
-      <p className="mt-2 text-5xl font-bold text-gradient">
-        ${usdTotal.toFixed(2)} USD
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Per-token amounts below sum to the headline; CELO converted at $0.55
-        (Mento oracle snapshot; replace with live feed in a future PR).
-      </p>
+    <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-card/50">
+      {/* Headline figure */}
+      <div className="border-b border-border p-6 sm:p-8">
+        <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
+          Total protocol revenue · USD
+        </p>
+        <p className="mt-3 font-mono text-5xl font-bold tracking-tight text-primary tabular-nums sm:text-6xl">
+          ${usdTotal.toFixed(2)}
+        </p>
+        <p className="mt-3 max-w-md font-mono text-[0.7rem] text-muted-foreground/70">
+          2% fee on every resolved bounty, plus forfeited stake. CELO valued at $
+          {celoUsd.toFixed(2)} (live). cUSD and USDC at peg.
+        </p>
+      </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-4">
-        <PerToken label="cUSD" amount={r.cUSD} decimals={18} />
+      {/* Per-token breakdown */}
+      <div className="grid grid-cols-3 gap-px bg-border">
+        <PerToken label="cUSD" amount={r.cUSD} decimals={18} accent />
         <PerToken label="CELO" amount={r.CELO} decimals={18} />
         <PerToken label="USDC" amount={r.USDC} decimals={6} />
       </div>
@@ -34,16 +40,23 @@ function PerToken({
   label,
   amount,
   decimals,
+  accent,
 }: {
   label: string;
   amount: bigint;
   decimals: number;
+  accent?: boolean;
 }) {
-  const float = Number(amount) / 10 ** decimals;
   return (
-    <div className="glass rounded-2xl p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 text-2xl font-semibold">{float.toFixed(4)}</div>
+    <div className="flex flex-col gap-1.5 bg-card p-5 sm:p-6">
+      <span className="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </span>
+      <span
+        className={`font-mono text-xl font-bold tabular-nums sm:text-2xl ${accent ? "text-primary" : "text-foreground"}`}
+      >
+        {formatTokenAmount(amount, decimals, 4)}
+      </span>
     </div>
   );
 }

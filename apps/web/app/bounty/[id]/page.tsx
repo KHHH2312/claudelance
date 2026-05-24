@@ -65,14 +65,14 @@ export default async function BountyDetailPage({
   if (!bounty) notFound();
 
   return (
-    <main className="relative isolate min-h-dvh overflow-hidden">
+    <main className="relative isolate min-h-dvh overflow-x-clip">
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-anime opacity-40 dark:opacity-30"
+        className="pointer-events-none fixed inset-0 -z-10 bg-grid opacity-[0.04] dark:opacity-[0.08]"
       />
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 grid-pattern opacity-30 dark:opacity-20"
+        className="noise pointer-events-none fixed inset-0 -z-10 opacity-[0.015] dark:opacity-[0.03]"
       />
 
       <Header />

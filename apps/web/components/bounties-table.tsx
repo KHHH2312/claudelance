@@ -187,11 +187,13 @@ export function BountiesTable() {
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-24 pt-10 sm:pt-14">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-medium text-primary">Open marketplace</p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-5xl">
+          <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
+            Open marketplace
+          </p>
+          <h1 className="mt-1.5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
             Browse bounties
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
             Live escrowed work read straight from the Core contract. Defaults to
             open bounties you can still claim — switch to Resolved or All to see
             history.
@@ -276,7 +278,7 @@ export function BountiesTable() {
                       key={bounty.id}
                       className="border-b border-border/60 transition-colors last:border-0 hover:bg-accent/40"
                     >
-                      <td className="px-4 py-3 tabular-nums text-muted-foreground">{bounty.id}</td>
+                      <td className="px-4 py-3 font-mono tabular-nums text-muted-foreground">{bounty.id}</td>
                       <td className="px-4 py-3">
                         <span className="block max-w-[260px] truncate font-medium text-foreground">
                           {deriveTitle(bounty)}
@@ -297,7 +299,7 @@ export function BountiesTable() {
                           {symbol ?? "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums">
+                      <td className="px-4 py-3 text-right font-mono font-medium tabular-nums text-foreground">
                         {formatReward(bounty.amount, symbol)}
                       </td>
                       <td className="px-4 py-3">
@@ -313,7 +315,7 @@ export function BountiesTable() {
                       <td className="px-4 py-3 text-muted-foreground">
                         {formatDeadline(bounty.deadline)}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-muted-foreground">
                         {bounty.claimedSlots}/{bounty.maxSlots}
                       </td>
                       <td className="px-4 py-3 text-right">

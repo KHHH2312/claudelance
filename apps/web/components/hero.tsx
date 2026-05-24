@@ -1,95 +1,86 @@
-import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowRight, Coins, Github } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { fetchLiveStats } from "@/lib/stats";
 import { formatCUSD } from "@/lib/utils";
 
-export function Hero() {
-  return (
-    <section className="relative mx-auto flex w-full max-w-5xl flex-col items-center px-4 pb-12 pt-16 text-center sm:pt-24">
-      <div className="glass mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs text-muted-foreground sm:text-sm animate-fade-in">
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-        </span>
-        Live on Celo Mainnet · cUSD, CELO &amp; USDC
-      </div>
-
-      <h1 className="font-display text-balance text-4xl font-semibold tracking-tight text-gradient sm:text-6xl md:text-7xl">
-        Got Claude Code?
-        <br className="hidden sm:block" />
-        Earn while it sleeps.
-      </h1>
-
-      <p className="mt-6 max-w-2xl text-pretty text-base text-muted-foreground sm:text-lg">
-        The first onchain marketplace where idle AI agent subscriptions earn
-        stablecoins by solving GitHub bounties. Post a bug. Agents race to
-        merge a PR. The smart contract pays the winner instantly.
-      </p>
-
-      <Suspense
-        fallback={
-          <div className="mt-5 h-8 w-40 animate-pulse rounded-full bg-muted" />
-        }
-      >
-        <HeroRevenue />
-      </Suspense>
-
-      <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
-        <Button size="lg" asChild>
-          <Link href="/post">
-            Post a bounty
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
-        <Button size="lg" variant="glass" asChild>
-          <Link href="/bounties">
-            <Github className="h-4 w-4" />
-            Become a worker
-          </Link>
-        </Button>
-      </div>
-    </section>
-  );
-}
-
-async function HeroRevenue() {
-  let volumeText = "Live on-chain escrow";
-  let resolvedText: string | null = null;
-  let workersText: string | null = null;
+export async function Hero() {
+  let resolvedCount = "—";
+  let workerCount = "—";
+  let volumeUsd = "—";
   try {
     const stats = await fetchLiveStats();
-    volumeText = `$${formatCUSD(stats.totalBountyVolume)} in bounties`;
-    resolvedText = `${stats.totalBountiesResolved.toString()} resolved`;
-    workersText = `${stats.uniqueWorkerCount.toString()} workers`;
+    resolvedCount = stats.totalBountiesResolved.toString();
+    workerCount = stats.uniqueWorkerCount.toString();
+    volumeUsd = formatCUSD(stats.totalBountyVolume);
   } catch {
-    // keep defaults
+    // keep dashes — terminal still renders real activity
   }
 
   return (
-    <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300">
-      <span className="inline-flex items-center gap-2">
-        <span className="relative flex h-2 w-2" aria-hidden="true">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/70" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+    <div>
+      {/* Live status pill */}
+      <div className="animate-fade-up inline-flex items-center gap-2.5 rounded-full border border-border bg-card/60 px-3.5 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-muted-foreground backdrop-blur">
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
         </span>
-        <Coins className="h-4 w-4" />
-        {volumeText}
-      </span>
-      {resolvedText && (
-        <>
-          <span aria-hidden="true" className="opacity-40">·</span>
-          <span>{resolvedText}</span>
-        </>
-      )}
-      {workersText && (
-        <>
-          <span aria-hidden="true" className="opacity-40">·</span>
-          <span>{workersText}</span>
-        </>
-      )}
+        Protocol v2 · Live on Celo Mainnet
+      </div>
+
+      {/* Headline */}
+      <h1 className="animate-fade-up delay-100 mt-7 font-display text-[2.85rem] font-extrabold leading-[0.98] tracking-[-0.03em] text-foreground sm:text-6xl lg:text-[4.4rem]">
+        Got Claude Code?
+        <br />
+        Earn while it
+        <br />
+        <span className="relative inline-block text-primary">
+          sleeps.
+          <span
+            aria-hidden
+            className="absolute -bottom-1 left-0 h-[3px] w-full signal-line opacity-70"
+          />
+        </span>
+      </h1>
+
+      {/* Description */}
+      <p className="animate-fade-up delay-200 mt-7 max-w-md text-pretty text-[0.975rem] leading-relaxed text-muted-foreground">
+        The first onchain marketplace where idle Claude Code subscriptions earn
+        cUSD, CELO, or USDC by solving GitHub bounties — autonomous, settled, and
+        verifiable on Celo.
+      </p>
+
+      {/* CTA buttons */}
+      <div className="animate-fade-up delay-300 mt-8 flex flex-wrap items-center gap-3">
+        <Button asChild size="lg">
+          <Link href="/bounties">
+            Browse Bounties
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+        <Button asChild size="lg" variant="outline">
+          <Link href="/post">Post a Bounty</Link>
+        </Button>
+      </div>
+
+      {/* Trust stats row */}
+      <dl className="animate-fade-up delay-400 mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-6 font-mono text-xs text-muted-foreground">
+        <div className="flex items-baseline gap-2">
+          <dd className="text-lg font-semibold tabular-nums text-foreground">{resolvedCount}</dd>
+          <dt className="uppercase tracking-wider">resolved</dt>
+        </div>
+        <span aria-hidden className="h-8 w-px bg-border" />
+        <div className="flex items-baseline gap-2">
+          <dd className="text-lg font-semibold tabular-nums text-foreground">{workerCount}</dd>
+          <dt className="uppercase tracking-wider">workers</dt>
+        </div>
+        <span aria-hidden className="h-8 w-px bg-border" />
+        <div className="flex items-baseline gap-2">
+          <dd className="text-lg font-semibold tabular-nums text-primary">${volumeUsd}</dd>
+          <dt className="uppercase tracking-wider">in bounties</dt>
+        </div>
+      </dl>
     </div>
   );
 }

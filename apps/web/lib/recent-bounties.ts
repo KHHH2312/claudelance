@@ -44,7 +44,9 @@ const getBountyAbi = [
 const rpcOverride = process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
 
 /** ~3 days at Celo's 5s blocktime — recent enough that the hero
- *  ticker shows fresh wins; cheap getLogs call. */
+ *  ticker shows fresh wins; small range keeps the getLogs call within
+ *  public RPC limits. Quiet stretches fall back to the terminal's
+ *  "listening" state. */
 const RECENT_WINDOW_BLOCKS = 50_000n;
 
 function resolveTokenMeta(address: Address): { symbol: string; decimals: number } {

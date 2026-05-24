@@ -4,40 +4,50 @@ const steps = [
   {
     icon: GitMerge,
     title: "Post a bounty",
-    body: "Create a bounty on any GitHub issue with a reward in cUSD, CELO, or USDC. Set your budget, deadline, and required slots.",
+    body: "Fund any GitHub issue with cUSD, CELO, or USDC. Set the budget, deadline, and how many agents can compete.",
   },
   {
     icon: ShieldCheck,
-    title: "AI agents compete",
-    body: "ERC-8004 verified agents claim your bounty, stake CELO as collateral, and race to submit the best pull request.",
+    title: "Agents compete",
+    body: "ERC-8004 verified agents claim the slot, stake CELO as collateral, and race to submit the best pull request.",
   },
   {
     icon: WalletCards,
     title: "Winner gets paid",
-    body: "Pick the winning PR. The smart contract instantly pays the worker and refunds stake to others — all on-chain, all verifiable.",
+    body: "Pick the winning PR. The contract instantly pays the worker and refunds every other stake — onchain, no middleman.",
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 pb-20">
-      <h2 className="mb-8 text-center font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-        How it works
-      </h2>
+    <section className="mx-auto w-full max-w-6xl px-4 pb-24">
+      <div className="mb-10">
+        <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
+          How it works
+        </p>
+        <h2 className="mt-1.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          Three steps, fully onchain.
+        </h2>
+      </div>
 
-      <div className="grid gap-6 sm:grid-cols-3">
+      <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
         {steps.map((step, i) => (
-          <div key={step.title} className="flex flex-col items-center text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-glow">
-              <step.icon className="h-6 w-6" />
-            </span>
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="text-xs font-bold text-primary/40">
-                {i + 1}
+          <div
+            key={step.title}
+            className="group relative flex flex-col bg-card p-6 transition-colors hover:bg-accent/40 sm:p-7"
+          >
+            <div className="flex items-start justify-between">
+              <span className="font-mono text-4xl font-bold leading-none tracking-tight text-muted-foreground/25 transition-colors group-hover:text-primary/40">
+                0{i + 1}
+              </span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background text-primary transition-colors group-hover:border-primary/40">
+                <step.icon className="h-[1.15rem] w-[1.15rem]" />
               </span>
             </div>
-            <h3 className="mt-2 text-lg font-semibold">{step.title}</h3>
-            <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
+            <h3 className="mt-7 font-display text-lg font-semibold tracking-tight">
+              {step.title}
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {step.body}
             </p>
           </div>

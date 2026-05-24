@@ -274,8 +274,12 @@ function PostBountyForm() {
 
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">Create bounty</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Post an onchain task</h1>
+          <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
+            Create bounty
+          </p>
+          <h1 className="mt-1.5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+            Post an onchain task
+          </h1>
           <div className="mt-3">
             <MiniPayBadge />
           </div>

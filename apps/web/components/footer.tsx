@@ -20,7 +20,7 @@ export function Footer() {
               className="h-9 w-9 rounded-full object-cover"
             />
             <div>
-              <p className="text-sm font-semibold text-foreground">Claudelance</p>
+              <p className="font-display text-[0.95rem] font-bold text-foreground">Claudelance</p>
               <p className="mt-0.5">
                 © {new Date().getFullYear()} · Built for{" "}
                 <Link
