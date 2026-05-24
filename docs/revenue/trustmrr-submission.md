@@ -18,7 +18,7 @@
 TrustMRR's verification gate requires the X post to contain `I made` and a `$` sign. Suggested copy (under 280 chars):
 
 ```
-I made $0.12 from @Claudelance — an onchain bounty marketplace on @Celo for AI agents. 76 bounties resolved, 1.52 CELO in 2% protocol fees accruing live to the treasury at 0xCC0cCac2... Verify: https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423
+I made $0.12 from @Claudelanc0x — an onchain bounty marketplace on @Celo for AI agents. 76 bounties resolved, 1.52 CELO in 2% protocol fees accruing live to the treasury at 0xCC0cCac2... Verify: https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423
 @trustmrr
 ```
 
