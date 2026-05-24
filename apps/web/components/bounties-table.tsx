@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   ChevronLeft,
+  ChevronDown,
   ChevronRight,
   Loader2,
   Search,
@@ -185,7 +186,7 @@ export function BountiesTable() {
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-24 pt-10 sm:pt-14">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
             Open marketplace
@@ -193,13 +194,13 @@ export function BountiesTable() {
           <h1 className="mt-1.5 font-display text-3xl font-bold tracking-tight sm:text-4xl">
             Browse bounties
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
             Live escrowed work read straight from the Core contract. Defaults to
             open bounties you can still claim — switch to Resolved or All to see
             history.
           </p>
         </div>
-        <Button asChild>
+        <Button asChild className="shrink-0 self-start rounded-full sm:self-end">
           <Link href="/post">
             Post a bounty
             <ArrowRight className="h-4 w-4" aria-hidden />
@@ -208,18 +209,6 @@ export function BountiesTable() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <FilterChips
-          ariaLabel="Filter by status"
-          options={STATUS_FILTERS}
-          active={status}
-          onSelect={setStatus}
-        />
-        <FilterChips
-          ariaLabel="Filter by token"
-          options={TOKEN_FILTERS}
-          active={token}
-          onSelect={setToken}
-        />
         <label className="relative block">
           <Search
             aria-hidden
@@ -231,9 +220,56 @@ export function BountiesTable() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by id, repository, or issue"
             aria-label="Search bounties"
-            className="h-11 w-full rounded-full border border-border bg-card/70 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+            className="h-11 w-full rounded-full border border-border bg-card pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
           />
         </label>
+
+        <div className="flex items-center gap-2">
+          <div
+            role="group"
+            aria-label="Filter by status"
+            className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {STATUS_FILTERS.map((option) => {
+              const isActive = status === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => setStatus(option.value)}
+                  className={cn(
+                    "h-9 shrink-0 rounded-full border px-3.5 text-xs font-medium transition-colors",
+                    isActive
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="relative shrink-0">
+            <select
+              value={token}
+              onChange={(event) => setToken(event.target.value as TokenFilter)}
+              aria-label="Filter by token"
+              className="h-9 appearance-none rounded-full border border-border bg-card pl-3.5 pr-8 text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-ring"
+            >
+              {TOKEN_FILTERS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              aria-hidden
+              className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+            />
+          </div>
+        </div>
       </div>
 
       {error ? (
@@ -254,9 +290,17 @@ export function BountiesTable() {
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card/70">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] border-collapse text-sm">
+        <>
+          {/* Mobile: cards (no horizontal overflow) */}
+          <div className="space-y-3 sm:hidden">
+            {visible.map((bounty) => (
+              <BountyCard key={bounty.id} bounty={bounty} />
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card sm:block">
+            <table className="w-full min-w-[680px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th scope="col" className="px-4 py-3 font-medium">#</th>
@@ -273,6 +317,7 @@ export function BountiesTable() {
                 {visible.map((bounty) => {
                   const symbol = symbolForAddress(bounty.token);
                   const isDirectHire = bounty.targetWorker.toLowerCase() !== ZERO_ADDRESS.toLowerCase();
+                  const s = effectiveStatus(bounty.status, bounty.deadline);
                   return (
                     <tr
                       key={bounty.id}
@@ -303,14 +348,9 @@ export function BountiesTable() {
                         {formatReward(bounty.amount, symbol)}
                       </td>
                       <td className="px-4 py-3">
-                        {(() => {
-                          const s = effectiveStatus(bounty.status, bounty.deadline);
-                          return (
-                            <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", s.className)}>
-                              {s.label}
-                            </span>
-                          );
-                        })()}
+                        <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", s.className)}>
+                          {s.label}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {formatDeadline(bounty.deadline)}
@@ -333,7 +373,7 @@ export function BountiesTable() {
               </tbody>
             </table>
           </div>
-        </div>
+        </>
       )}
 
       {!isLoading && !error && filtered.length > 0 ? (
@@ -375,45 +415,55 @@ export function BountiesTable() {
   );
 }
 
-function FilterChips<T extends string>({
-  ariaLabel,
-  options,
-  active,
-  onSelect,
-}: {
-  ariaLabel: string;
-  options: Array<{ value: T; label: string }>;
-  active: T;
-  onSelect: (value: T) => void;
-}) {
+function BountyCard({ bounty }: { bounty: ApiBounty }) {
+  const symbol = symbolForAddress(bounty.token);
+  const isDirectHire = bounty.targetWorker.toLowerCase() !== ZERO_ADDRESS.toLowerCase();
+  const s = effectiveStatus(bounty.status, bounty.deadline);
+
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={ariaLabel}>
-      {options.map((option) => {
-        const isActive = active === option.value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={isActive}
-            onClick={() => onSelect(option.value)}
-            className={cn(
-              "min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition",
-              isActive
-                ? "border-primary bg-primary text-primary-foreground shadow-glow"
-                : "border-border bg-card/70 text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
+    <Link
+      href={`/bounty/${bounty.id}`}
+      className="block rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40 active:bg-accent/40"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="font-mono text-xs text-muted-foreground">#{bounty.id}</span>
+            <span className={cn("rounded-full px-2 py-0.5 text-[0.65rem] font-medium", s.className)}>
+              {s.label}
+            </span>
+            {isDirectHire ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-muted-foreground">
+                Direct hire
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-1.5 truncate font-medium text-foreground">{deriveTitle(bounty)}</p>
+        </div>
+        <span
+          className={cn(
+            "shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+            symbol ? TOKEN_BADGE[symbol] : "bg-muted text-muted-foreground ring-border",
+          )}
+        >
+          {symbol ?? "—"}
+        </span>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+        <span className="font-mono text-sm font-semibold tabular-nums text-foreground">
+          {formatReward(bounty.amount, symbol)} <span className="text-muted-foreground">{symbol}</span>
+        </span>
+        <span className="font-mono text-xs tabular-nums text-muted-foreground">
+          {formatDeadline(bounty.deadline)} · {bounty.claimedSlots}/{bounty.maxSlots} slots
+        </span>
+      </div>
+    </Link>
   );
 }
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border bg-card/70 p-8 text-center">
+    <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
       <p className="text-sm text-muted-foreground">{message}</p>
       <Button asChild variant="secondary" className="mt-4">
         <Link href="/post">Post a bounty</Link>

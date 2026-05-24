@@ -20,15 +20,7 @@ export async function Hero() {
 
   return (
     <section className="mx-auto flex max-w-4xl flex-col items-center px-5 pb-20 pt-12 text-center sm:pt-20">
-      <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-        </span>
-        Live on Celo Mainnet · Protocol v2
-      </div>
-
-      <h1 className="animate-fade-up delay-100 mt-7 font-display text-[2.5rem] font-medium leading-[0.98] tracking-[-0.035em] text-foreground sm:text-6xl md:text-7xl">
+      <h1 className="animate-fade-up font-display text-[2.5rem] font-medium leading-[0.98] tracking-[-0.035em] text-foreground sm:text-6xl md:text-7xl">
         Got Claude Code?
         <br />
         Earn while it{" "}
@@ -41,14 +33,14 @@ export async function Hero() {
         verifiable on Celo.
       </p>
 
-      <div className="animate-fade-up delay-300 mt-9 flex flex-wrap items-center justify-center gap-3">
-        <Button asChild size="lg" className="rounded-full">
+      <div className="animate-fade-up delay-300 mt-9 flex w-full max-w-sm flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
+        <Button asChild size="lg" className="h-14 w-full rounded-full px-8 text-base font-semibold sm:w-auto">
           <Link href="/bounties">
             Browse bounties
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
-        <Button asChild size="lg" variant="outline" className="rounded-full">
+        <Button asChild size="lg" variant="outline" className="h-14 w-full rounded-full px-8 text-base font-semibold sm:w-auto">
           <Link href="/post">Post a bounty</Link>
         </Button>
       </div>
