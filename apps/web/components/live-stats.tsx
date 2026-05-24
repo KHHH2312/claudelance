@@ -1,6 +1,5 @@
-import { ArrowUpRight, Coins, Hammer, ScanLine, Users } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
-import { GlassCard } from "@/components/ui/card";
 import { fetchLiveStats } from "@/lib/stats";
 import { formatCELO } from "@/lib/utils";
 import { getDeployment } from "@/lib/contracts";
@@ -22,80 +21,90 @@ export async function LiveStats() {
   const chain = chainById(DEFAULT_CHAIN_ID);
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 pb-20">
-      <GlassCard className="!p-0">
-        <header className="flex flex-col gap-1 border-b border-white/10 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Marketplace pulse · {chain?.name}
-            </p>
-            <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              Receipts, not promises.
-            </h2>
-          </div>
-          <a
-            href={`${chain?.blockExplorers?.default.url}/address/${deployment.core}#code`}
-            target="_blank"
-            rel="noreferrer"
-            className="touch-target inline-flex items-center gap-1 rounded-full text-sm text-muted-foreground hover:text-foreground"
-          >
-            View verified contract <ArrowUpRight className="h-3.5 w-3.5" />
-          </a>
-        </header>
+    <section className="mx-auto w-full max-w-6xl px-4 pb-20 pt-4">
+      {/* Section heading */}
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground">
+            Marketplace pulse · {chain?.name}
+          </p>
+          <h2 className="mt-1.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+            Receipts, not promises.
+          </h2>
+        </div>
+        <a
+          href={`${chain?.blockExplorers?.default.url}/address/${deployment.core}#code`}
+          target="_blank"
+          rel="noreferrer"
+          className="touch-target inline-flex items-center gap-1.5 self-start font-mono text-xs text-muted-foreground transition-colors hover:text-foreground sm:self-auto"
+        >
+          View verified contract
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </a>
+      </div>
 
-        {error ? (
-          <p className="p-6 text-sm text-destructive">{error}</p>
-        ) : snapshot ? (
-          <ul className="grid grid-cols-2 divide-y divide-white/10 sm:grid-cols-4 sm:divide-x sm:divide-y-0">
-            <Stat
-              icon={<Hammer className="h-4 w-4" />}
-              label="Bounties posted"
-              value={snapshot.bountyCount.toString()}
-            />
-            <Stat
-              icon={<Coins className="h-4 w-4" />}
-              label="Total volume"
-              value={`${formatCELO(snapshot.totalVolumeInCelo)} CELO`}
-              sub={`CELO ≈ $${snapshot.celoUsdPrice.toFixed(2)}`}
-            />
-            <Stat
-              icon={<ScanLine className="h-4 w-4" />}
-              label="Resolved"
-              value={snapshot.totalBountiesResolved.toString()}
-              sub={`${(Number(snapshot.feeBps) / 100).toFixed(2)}% fee`}
-            />
-            <Stat
-              icon={<Users className="h-4 w-4" />}
-              label="Unique workers"
-              value={snapshot.uniqueWorkerCount.toString()}
-              sub={`${snapshot.uniquePosterCount} posters`}
-            />
-          </ul>
-        ) : null}
-      </GlassCard>
+      {error ? (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 font-mono text-sm text-destructive">
+          {error}
+        </div>
+      ) : snapshot ? (
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-4">
+          <Stat
+            label="Bounties posted"
+            value={snapshot.bountyCount.toString()}
+          />
+          <Stat
+            label="Total volume"
+            value={formatCELO(snapshot.totalVolumeInCelo)}
+            unit="CELO"
+            sub={`CELO ≈ $${snapshot.celoUsdPrice.toFixed(2)}`}
+            accent
+          />
+          <Stat
+            label="Resolved"
+            value={snapshot.totalBountiesResolved.toString()}
+            sub={`${(Number(snapshot.feeBps) / 100).toFixed(2)}% protocol fee`}
+          />
+          <Stat
+            label="Unique workers"
+            value={snapshot.uniqueWorkerCount.toString()}
+            sub={`${snapshot.uniquePosterCount} posters`}
+          />
+        </div>
+      ) : null}
     </section>
   );
 }
 
 function Stat({
-  icon,
   label,
   value,
+  unit,
   sub,
+  accent,
 }: {
-  icon: React.ReactNode;
   label: string;
   value: string;
+  unit?: string;
   sub?: string;
+  accent?: boolean;
 }) {
   return (
-    <li className="flex flex-col gap-1 p-6">
-      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent text-accent-foreground">
-        {icon}
-      </span>
-      <p className="mt-2 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{value}</p>
-      {sub ? <p className="text-xs text-muted-foreground">{sub}</p> : null}
-    </li>
+    <div className="flex flex-col gap-2 bg-card p-5 sm:p-6">
+      <p className="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="font-mono text-3xl font-bold leading-none tracking-tight tabular-nums sm:text-4xl">
+        <span className={accent ? "text-primary" : "text-foreground"}>{value}</span>
+        {unit ? (
+          <span className="ml-1.5 text-base font-medium text-muted-foreground">{unit}</span>
+        ) : null}
+      </p>
+      {sub ? (
+        <p className="font-mono text-[0.7rem] text-muted-foreground/70">{sub}</p>
+      ) : (
+        <p className="h-[0.85rem]" aria-hidden />
+      )}
+    </div>
   );
 }
