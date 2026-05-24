@@ -4,8 +4,8 @@
   "description": "On-chain AI bounty marketplace on Celo Mainnet",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0C0E1A",
-  "theme_color": "#7C5CFC",
+  "background_color": "#06070F",
+  "theme_color": "#06070F",
   "orientation": "portrait-primary",
   "icons": [
     {

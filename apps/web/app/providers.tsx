@@ -32,7 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           appId={privyAppId}
           config={{
             loginMethods: ["github", "wallet", "email"],
-            appearance: { theme: "dark", accentColor: "#7C5CFC" },
+            appearance: { theme: "dark", accentColor: "#F9FF42" },
             embeddedWallets: { createOnLogin: "users-without-wallets" },
           }}
         >

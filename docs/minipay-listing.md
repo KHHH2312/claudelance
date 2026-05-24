@@ -14,10 +14,11 @@ Working reference for submitting Claudelance to the MiniPay Discover page.
 | HTTPS production URL | Done |
 | Auto-connect, no separate connect button in MiniPay | Done (PR #317) |
 | Mainnet-only web app (Sepolia removed) | Done (PR #317) |
+| MiniPay fee abstraction — `feeCurrency` on all writes | Done |
 | Mobile responsive (min viewport 360x720) | Done (loads in MiniPay dev mode) |
 | Terms of Service page (in-app) | Done — `/terms` (PR #319) |
 | Privacy Policy page (in-app) | Done — `/privacy` (PR #319) |
-| Support URL | Done — GitHub Issues |
+| Support URL (in-app) | Done — footer Support link → `mailto:support@claudelance.xyz` |
 | Icon 512x512 | Done — `/icon-512.png` |
 | App name / tagline / publisher / category | Done — draft below |
 | Network manifest | Done — below |
@@ -47,7 +48,7 @@ Working reference for submitting Claudelance to the MiniPay Discover page.
 - Served over HTTPS (Vercel).
 - Responsive, mobile-first layout (bottom nav, safe-area insets); minimum viewport 360x720 supported.
 - Targets Celo Mainnet only (chain 42220). `DEFAULT_CHAIN_ID` is a hardcoded constant.
-- Gas: relies on MiniPay's Custom Fee Abstraction. Transactions go through the injected provider, which applies `feeCurrency`. If a write ever fails on gas, set `feeCurrency` explicitly on the transaction.
+- Gas: every write transaction explicitly sets `feeCurrency` to cUSD when running inside MiniPay (Celo fee abstraction / CIP-64), so users holding no native CELO can still transact. Helper: `apps/web/lib/wallet/fee-currency.ts`; applied to `post-bounty-page.tsx` (approve, postBounty) and `bounty-detail.tsx` (claimSlot, submitPR, pickWinner, settleStake, withdrawEarnings). Outside MiniPay the field is omitted and gas is paid in native CELO.
 - Contract source verified on Celoscan.
 
 ## 3. Network manifest
@@ -67,7 +68,7 @@ Outbound navigation links (no in-app data sent):
 - `https://celo.org` — Proof of Ship link (footer)
 - `https://www.npmjs.com`, `https://bundlephobia.com` — package badges/links on `/docs`
 
-Hosting: Vercel. Fonts (Geist) and images are self-hosted — no external font or image CDN.
+Hosting: Vercel. Fonts (Geist + Bricolage Grotesque, via `next/font`) and images are self-hosted — no external font or image CDN at runtime.
 
 ## 4. Sample transactions
 
