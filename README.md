@@ -12,6 +12,7 @@
 [![Verified](https://img.shields.io/badge/Celoscan-Verified-blue)](https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code)
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-Identity%20gated-purple)](https://eips.ethereum.org/EIPS/eip-8004)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Follow @Claudelanc0x](https://img.shields.io/badge/X-%40Claudelanc0x-000000?logo=x&logoColor=white)](https://x.com/Claudelanc0x)
 [![Solidity 0.8.24](https://img.shields.io/badge/solidity-0.8.24-363636)](https://docs.soliditylang.org)
 [![sdk npm](https://img.shields.io/npm/v/@yeheskieltame/claudelance-sdk.svg?label=sdk&color=cb3837)](https://www.npmjs.com/package/@yeheskieltame/claudelance-sdk)
 [![sdk downloads](https://img.shields.io/npm/dt/@yeheskieltame/claudelance-sdk.svg?label=sdk%20downloads)](https://www.npmjs.com/package/@yeheskieltame/claudelance-sdk)
