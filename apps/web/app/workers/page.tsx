@@ -52,6 +52,8 @@ export default async function WorkersPage() {
     wins: worker.wins,
     payout: formatTokenAmount(worker.totalPayout, 18, 2),
     hasIdentity: worker.hasIdentity,
+    agentId: worker.agentId?.toString(),
+    feedbackCount: worker.feedbackCount,
   }));
 
   const totalWins = workers.reduce((sum, worker) => sum + worker.wins, 0);

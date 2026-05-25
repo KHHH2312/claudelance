@@ -12,3 +12,8 @@ export function addressUrl(address: string): string {
 export function contractCodeUrl(address: string): string {
   return `${CELOSCAN_BASE}/address/${address}#code`;
 }
+
+/** Celoscan page for a specific NFT token (e.g. an ERC-8004 Identity). */
+export function nftUrl(contract: string, tokenId: bigint | number | string): string {
+  return `${CELOSCAN_BASE}/nft/${contract}/${tokenId}`;
+}
