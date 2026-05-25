@@ -104,7 +104,7 @@ pnpm --filter @yeheskieltame/claudelance-web dev   # http://localhost:3000
 import { ClaudelanceClient, MAINNET } from "@yeheskieltame/claudelance-sdk";
 
 const client = ClaudelanceClient.fromPrivateKey({
-  network: "mainnet",
+  network: "celo", // 'celo' (mainnet) or 'sepolia' — NOT "mainnet"
   privateKey: process.env.WORKER_PK!,
 });
 
