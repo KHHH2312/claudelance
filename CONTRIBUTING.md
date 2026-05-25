@@ -71,6 +71,28 @@ Non-bounty contributions follow the standard fork-PR loop.
   `docs:`, `ci:`, etc.). Subject under 72 chars. Body wrapped at 80.
 - English for code, comments, commits. Bahasa is fine in chat / issues.
 
+## Releasing npm packages
+
+`@yeheskieltame/claudelance-sdk` + `-types` publish from CI on a tag. npm
+`latest` only reflects what was tagged — a feature merged to `main` is **not**
+on npm until the next release, so release promptly after merging a consumer-
+facing change.
+
+1. Bump the changed package's `version` (its own commit, e.g. `chore(sdk): release 0.4.8`).
+2. Merge to `main`.
+3. Tag and push: `git tag pkg-v<semver> && git push origin pkg-v<semver>`
+   (the semver must match the package.json version). This fires
+   `.github/workflows/publish-npm.yml` → npmjs + GitHub Packages.
+4. The workflow's final step verifies the version is live on npm; **also
+   verify the artifact contents** for a consumer-facing change:
+
+   ```bash
+   npm pack <name>@<semver> && tar xzf *.tgz && grep <expected-export> package/dist/index.js
+   ```
+
+   (We shipped `0.4.3` without the `ClaudelanceClient.address` getter because
+   it was tagged before the getter merged — a tarball check would have caught it.)
+
 ## Local setup
 
 ```bash
