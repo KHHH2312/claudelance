@@ -32,6 +32,8 @@ export async function GET(_request: Request, { params }: { params: Params }) {
         address: lowercased,
         hasIdentity: identity.hasIdentity,
         identityRegistry: identity.registry,
+        agentId: identity.agentId?.toString() ?? null,
+        feedbackCount: identity.feedbackCount,
         earnings: stats.earnings.map((row) => ({
           symbol: row.symbol,
           token: row.token,
