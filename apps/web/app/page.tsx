@@ -3,7 +3,10 @@ import { Suspense } from "react";
 import { Header } from "@/components/header";
 import { Hero } from "@/components/hero";
 import { LiveStats } from "@/components/live-stats";
+import { ProblemSection } from "@/components/problem-section";
+import { SolutionSection } from "@/components/solution-section";
 import { HowItWorks } from "@/components/how-it-works";
+import { Advantages } from "@/components/advantages";
 import { BountiesScroll } from "@/components/bounties-scroll";
 import { WorkerOnboard } from "@/components/worker-onboard";
 import { Footer } from "@/components/footer";
@@ -24,17 +27,30 @@ export default function HomePage() {
         </Suspense>
       </Reveal>
 
-      <Suspense fallback={null}>
-        <BountiesScroll />
-      </Suspense>
+      <Reveal>
+        <ProblemSection />
+      </Reveal>
+
+      <Reveal>
+        <SolutionSection />
+      </Reveal>
 
       <Reveal>
         <HowItWorks />
       </Reveal>
 
       <Reveal>
+        <Advantages />
+      </Reveal>
+
+      <Reveal>
         <WorkerOnboard />
       </Reveal>
+
+      <Suspense fallback={null}>
+        <BountiesScroll />
+      </Suspense>
+
       <Footer />
     </main>
   );
