@@ -5,6 +5,7 @@ import Link from "next/link";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CLAUDELANCE_CORE_ABI, MAINNET } from "@yeheskieltame/claudelance-types";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
@@ -14,10 +15,11 @@ import {
   GitPullRequest,
   Loader2,
   ShieldCheck,
+  Users,
   Wallet,
 } from "lucide-react";
 import type { Address, Hash } from "viem";
-import { keccak256, parseUnits, toBytes } from "viem";
+import { getAddress, isAddress, keccak256, parseUnits, toBytes } from "viem";
 import {
   createConfig,
   http,
@@ -39,15 +41,23 @@ import { useTransactionToast } from "@/components/transaction-toast";
 import { celoMainnet, supportedChains } from "@/lib/chain";
 import { isMiniPay } from "@/lib/wallet/config";
 import { miniPayFeeCurrency } from "@/lib/wallet/fee-currency";
+import { agentIdFor } from "@/lib/agent-ids";
 import { cn } from "@/lib/utils";
 
 type TokenSymbol = "cUSD" | "CELO" | "USDC";
 type PendingAction = "approve" | "post";
+type HireMode = "open" | "direct";
 
 // Mirrors on-chain minBounty(token) on mainnet core 0x1362d8…E423.
 const TOKEN_MIN: Record<TokenSymbol, string> = { cUSD: "0.5", CELO: "1", USDC: "0.5" };
 
 type FormState = {
+  hireMode: HireMode;
+  // Direct-hire only: the worker's WALLET address (contract `targetWorker` is an
+  // `address`, not the ERC-8004 id). The wallet must hold an ERC-8004 identity
+  // to claim — validated live in the form, since the contract checks it only at
+  // claim time.
+  targetWorker: string;
   token: TokenSymbol;
   amount: string;
   repoUrl: string;
@@ -150,6 +160,8 @@ const formSchema = tokenStepObject
   );
 
 const initialState: FormState = {
+  hireMode: "open",
+  targetWorker: "",
   token: "CELO",
   amount: "1",
   repoUrl: "",
@@ -198,9 +210,37 @@ function PostBountyForm() {
   const [pendingAction, setPendingAction] = React.useState<PendingAction | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
 
+  // Quick-hire deep-link: /post?worker=0x.. preselects direct-hire + target.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const w = new URLSearchParams(window.location.search).get("worker");
+    if (w && isAddress(w)) {
+      setValues((current) => ({ ...current, hireMode: "direct", targetWorker: getAddress(w) }));
+    }
+  }, []);
+
+  const isDirect = values.hireMode === "direct";
+  const targetTrimmed = values.targetWorker.trim();
+  const targetValid = isDirect && isAddress(targetTrimmed);
+
   const token = tokenConfig(values.token, deployment);
   const parsed = React.useMemo(() => parseForm(values, deployment), [deployment, values]);
   const onReview = step === 3;
+
+  // Best practice: the contract doesn't check the target holds an ERC-8004
+  // identity at post time (only at claim), so validate it here — a target
+  // without one can never claim and the bounty would sit until cancelExpired.
+  const { data: targetIdentityBal } = useReadContract({
+    address: deployment.identityRegistry as Address,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: targetValid ? [getAddress(targetTrimmed)] : undefined,
+    chainId: writeChainId,
+    query: { enabled: targetValid },
+  });
+  const targetHasIdentity =
+    typeof targetIdentityBal === "bigint" ? targetIdentityBal > 0n : undefined;
+  const targetAgentId = targetValid ? agentIdFor(targetTrimmed) : undefined;
 
   // The poster escrows only the reward `amount` (the worker stake is pulled
   // from workers on claim), so allowance + balance are checked against `amount`.
@@ -312,29 +352,54 @@ function PostBountyForm() {
       setErrors(flattenZodErrors(result));
       return;
     }
+    if (isDirect && !targetValid) {
+      setErrors({ targetWorker: "Enter a valid worker wallet address (0x…)." });
+      return;
+    }
 
     setActionError(null);
     setPendingAction("post");
     try {
-      const hash = await writeContractAsync({
-        address: deployment.core,
-        abi: CLAUDELANCE_CORE_ABI,
-        functionName: "postBounty",
-        args: [
-          token.address,
-          0,
-          normalizedUrl(values.repoUrl),
-          normalizedUrl(values.issueUrl),
-          parsed.requirementsHash,
-          parsed.amount,
-          Number(values.maxSlots),
-          parsed.stake,
-          parsed.deadlineSeconds,
-          values.ciRequired,
-        ],
-        chainId: writeChainId,
-        feeCurrency: miniPayFeeCurrency(),
-      });
+      const repo = normalizedUrl(values.repoUrl);
+      const issue = normalizedUrl(values.issueUrl);
+      const hash = isDirect
+        ? await writeContractAsync({
+            address: deployment.core,
+            abi: CLAUDELANCE_CORE_ABI,
+            functionName: "postDirectHire",
+            args: [
+              token.address,
+              getAddress(targetTrimmed),
+              0,
+              repo,
+              issue,
+              parsed.requirementsHash,
+              parsed.amount,
+              parsed.stake,
+              parsed.deadlineSeconds,
+            ],
+            chainId: writeChainId,
+            feeCurrency: miniPayFeeCurrency(),
+          })
+        : await writeContractAsync({
+            address: deployment.core,
+            abi: CLAUDELANCE_CORE_ABI,
+            functionName: "postBounty",
+            args: [
+              token.address,
+              0,
+              repo,
+              issue,
+              parsed.requirementsHash,
+              parsed.amount,
+              Number(values.maxSlots),
+              parsed.stake,
+              parsed.deadlineSeconds,
+              values.ciRequired,
+            ],
+            chainId: writeChainId,
+            feeCurrency: miniPayFeeCurrency(),
+          });
       setPostHash(hash);
     } catch (error) {
       setActionError(getErrorMessage(error));
@@ -373,6 +438,40 @@ function PostBountyForm() {
           onConnect={connectInjected}
           onDisconnect={() => disconnect()}
         />
+      </div>
+
+      <div
+        role="radiogroup"
+        aria-label="Hire mode"
+        className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:max-w-xl"
+      >
+        {(
+          [
+            { mode: "open", label: "Open marketplace", icon: Users, hint: "Any ERC-8004 agent can claim a slot" },
+            { mode: "direct", label: "Direct hire", icon: ShieldCheck, hint: "Reserve it for one agent by address" },
+          ] as const
+        ).map((opt) => {
+          const active = values.hireMode === opt.mode;
+          return (
+            <button
+              key={opt.mode}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => update("hireMode", opt.mode)}
+              className={cn(
+                "flex flex-col items-start gap-1 p-4 text-left transition-colors",
+                active ? "bg-primary/10" : "bg-card hover:bg-accent/40",
+              )}
+            >
+              <span className={cn("flex items-center gap-2 text-sm font-semibold", active ? "text-primary" : "text-foreground")}>
+                <opt.icon className="h-4 w-4" aria-hidden />
+                {opt.label}
+              </span>
+              <span className="text-xs text-muted-foreground">{opt.hint}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -420,7 +519,16 @@ function PostBountyForm() {
             />
           ) : null}
           {step === 1 ? <LinksStep values={values} errors={errors} onChange={update} /> : null}
-          {step === 2 ? <RulesStep values={values} errors={errors} onChange={update} /> : null}
+          {step === 2 ? (
+            <RulesStep
+              values={values}
+              errors={errors}
+              onChange={update}
+              isDirect={isDirect}
+              targetHasIdentity={targetHasIdentity}
+              targetAgentId={targetAgentId}
+            />
+          ) : null}
           {step === 3 ? (
             <ReviewStep
               values={values}
@@ -434,6 +542,10 @@ function PostBountyForm() {
               isPosting={isPosting}
               isPosted={isPostConfirmed}
               postHash={postHash}
+              isDirect={isDirect}
+              canPost={!isDirect || targetValid}
+              targetHasIdentity={targetHasIdentity}
+              targetAgentId={targetAgentId}
               onApprove={approveToken}
               onPost={postBounty}
               onConnect={connectInjected}
@@ -590,14 +702,38 @@ function RulesStep({
   values,
   errors,
   onChange,
+  isDirect,
+  targetHasIdentity,
+  targetAgentId,
 }: {
   values: FormState;
   errors: Record<string, string>;
   onChange: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+  isDirect: boolean;
+  targetHasIdentity?: boolean;
+  targetAgentId?: bigint;
 }) {
   return (
     <div>
-      <StepHeading title="Bounty rules" description="Set the stake, worker slots, deadline, and CI policy." />
+      <StepHeading
+        title={isDirect ? "Worker & rules" : "Bounty rules"}
+        description={
+          isDirect
+            ? "Choose the agent to hire, then set the stake and deadline."
+            : "Set the stake, worker slots, deadline, and CI policy."
+        }
+      />
+
+      {isDirect ? (
+        <DirectHireTarget
+          value={values.targetWorker}
+          onChange={(v) => onChange("targetWorker", v)}
+          error={errors.targetWorker}
+          hasIdentity={targetHasIdentity}
+          agentId={targetAgentId}
+        />
+      ) : null}
+
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <LabelledInput
           label="Stake"
@@ -607,14 +743,16 @@ function RulesStep({
           placeholder="0.1"
           onChange={(value) => onChange("stake", value)}
         />
-        <LabelledInput
-          label="Max slots"
-          inputMode="numeric"
-          value={values.maxSlots}
-          error={errors.maxSlots}
-          placeholder="3"
-          onChange={(value) => onChange("maxSlots", value)}
-        />
+        {!isDirect && (
+          <LabelledInput
+            label="Max slots"
+            inputMode="numeric"
+            value={values.maxSlots}
+            error={errors.maxSlots}
+            placeholder="3"
+            onChange={(value) => onChange("maxSlots", value)}
+          />
+        )}
         <LabelledInput
           label="Deadline"
           type="datetime-local"
@@ -623,19 +761,134 @@ function RulesStep({
           placeholder=""
           onChange={(value) => onChange("deadline", value)}
         />
-        <label className="flex min-h-20 items-center gap-3 rounded-xl border bg-background px-4 py-3">
-          <input
-            type="checkbox"
-            checked={values.ciRequired}
-            onChange={(event) => onChange("ciRequired", event.target.checked)}
-            className="h-4 w-4 rounded border-border accent-primary"
-          />
-          <span>
-            <span className="block text-sm font-medium">Require CI</span>
-            <span className="text-xs text-muted-foreground">Mark the bounty as CI-gated.</span>
-          </span>
-        </label>
+        {!isDirect && (
+          <label className="flex min-h-20 items-center gap-3 rounded-xl border bg-background px-4 py-3">
+            <input
+              type="checkbox"
+              checked={values.ciRequired}
+              onChange={(event) => onChange("ciRequired", event.target.checked)}
+              className="h-4 w-4 rounded border-border accent-primary"
+            />
+            <span>
+              <span className="block text-sm font-medium">Require CI</span>
+              <span className="text-xs text-muted-foreground">Mark the bounty as CI-gated.</span>
+            </span>
+          </label>
+        )}
       </div>
+
+      {isDirect ? (
+        <p className="mt-4 text-xs text-muted-foreground">
+          Direct hire forces a single slot and skips the CI gate (trust-based) — only the
+          targeted worker can claim.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function DirectHireTarget({
+  value,
+  onChange,
+  error,
+  hasIdentity,
+  agentId,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+  hasIdentity?: boolean;
+  agentId?: bigint;
+}) {
+  const [roster, setRoster] = React.useState<
+    Array<{ index: number; address: string; active: boolean }>
+  >([]);
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("/api/swarm")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setRoster(Array.isArray(d.workers) ? d.workers : []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const valid = isAddress(value.trim());
+
+  return (
+    <div className="mt-6">
+      <span className="text-sm font-medium">Target worker</span>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Direct hire targets a <strong className="text-foreground">wallet address</strong>. The
+        agent must hold an ERC-8004 identity to claim — pick a known agent or paste an address.
+      </p>
+      <input
+        type="text"
+        spellCheck={false}
+        value={value}
+        placeholder="0x… worker wallet address"
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "mt-3 w-full rounded-xl border bg-background px-3 py-2 font-mono text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          error ? "border-destructive" : "border-input",
+        )}
+      />
+
+      {valid ? (
+        <div className="mt-2">
+          {hasIdentity === undefined ? (
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden /> Checking ERC-8004 identity…
+            </span>
+          ) : hasIdentity ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-300">
+              <ShieldCheck className="h-3 w-3" aria-hidden /> ERC-8004 verified
+              {agentId !== undefined ? ` · agent #${agentId.toString()}` : ""}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300">
+              <AlertTriangle className="h-3 w-3" aria-hidden /> No ERC-8004 identity — this worker
+              must register before it can claim
+            </span>
+          )}
+        </div>
+      ) : null}
+      {error ? <span className="mt-2 block text-sm text-destructive">{error}</span> : null}
+
+      {roster.length > 0 ? (
+        <div className="mt-4">
+          <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
+            Known agents
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {roster.map((w) => {
+              const id = agentIdFor(w.address);
+              const selected = value.trim().toLowerCase() === w.address.toLowerCase();
+              return (
+                <button
+                  key={w.address}
+                  type="button"
+                  onClick={() => onChange(getAddress(w.address))}
+                  title={w.address}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-xs transition-colors",
+                    selected
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                  )}
+                >
+                  {id !== undefined ? `#${id.toString()}` : shortAddress(w.address as Address)}
+                  {w.active ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-label="active" />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -652,6 +905,10 @@ function ReviewStep({
   isPosting,
   isPosted,
   postHash,
+  isDirect,
+  canPost,
+  targetHasIdentity,
+  targetAgentId,
   onApprove,
   onPost,
   onConnect,
@@ -668,6 +925,10 @@ function ReviewStep({
   isPosting: boolean;
   isPosted: boolean;
   postHash: Hash | null;
+  isDirect: boolean;
+  canPost: boolean;
+  targetHasIdentity?: boolean;
+  targetAgentId?: bigint;
   onApprove: () => Promise<void>;
   onPost: () => Promise<void>;
   onConnect: () => void;
@@ -703,13 +964,22 @@ function ReviewStep({
     );
   }
 
-  const rows = [
+  const rows: Array<[string, string]> = [
     ["Network", deploymentName],
+    ["Hire mode", isDirect ? "Direct hire" : "Open marketplace"],
+    ...(isDirect
+      ? ([
+          [
+            "Target worker",
+            `${shortAddress(values.targetWorker as Address)}${targetAgentId !== undefined ? ` · agent #${targetAgentId.toString()}` : ""}`,
+          ],
+        ] as Array<[string, string]>)
+      : []),
     ["Reward", `${values.amount} ${values.token}`],
     ["Worker stake", `${values.stake} ${values.token}`],
-    ["Max slots", values.maxSlots],
+    ["Slots", isDirect ? "1 (direct hire)" : values.maxSlots],
+    ["CI", isDirect ? "Manual review (direct)" : values.ciRequired ? "Required" : "Manual review"],
     ["Deadline", formatDateTime(values.deadline)],
-    ["CI", values.ciRequired ? "Required" : "Manual review"],
     ["Token", `${values.token} · ${tokenAddress}`],
   ];
   const approved = allowanceKnown && !needsApproval;
@@ -782,15 +1052,26 @@ function ReviewStep({
                 description="Escrows the reward and opens the bounty to workers."
                 done={false}
               >
-                <Button type="button" onClick={onPost} disabled={isPosting || needsApproval || !hasBalance}>
+                <Button type="button" onClick={onPost} disabled={isPosting || needsApproval || !hasBalance || !canPost}>
                   {isPosting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ClipboardCheck className="h-4 w-4" aria-hidden />}
-                  {isPosting ? "Posting" : "Post bounty"}
+                  {isPosting ? "Posting" : isDirect ? "Hire worker" : "Post bounty"}
                 </Button>
               </FundStep>
             </ol>
 
             {needsApproval && allowanceKnown ? (
               <p className="mt-3 text-xs text-muted-foreground">Post unlocks once the approval is confirmed onchain.</p>
+            ) : null}
+            {isDirect && !canPost ? (
+              <p className="mt-3 text-xs text-amber-600 dark:text-amber-300">
+                Enter a valid worker wallet address to enable the hire.
+              </p>
+            ) : null}
+            {isDirect && canPost && targetHasIdentity === false ? (
+              <p className="mt-3 text-xs text-amber-600 dark:text-amber-300">
+                Heads up: this address has no ERC-8004 identity yet — it must register before it can
+                claim, or the bounty will sit until you cancel it.
+              </p>
             ) : null}
           </>
         )}
@@ -894,8 +1175,12 @@ function LabelledInput({
 function validateStep(step: number, values: FormState) {
   const schema = step === 0 ? tokenStepSchema : step === 1 ? linksStepSchema : rulesStepSchema;
   const result = schema.safeParse(values);
-  if (result.success) return { ok: true, errors: {} };
-  return { ok: false, errors: flattenZodErrors(result) };
+  const errors = result.success ? {} : flattenZodErrors(result);
+  // Direct hire requires a valid target wallet before leaving the rules step.
+  if (step === 2 && values.hireMode === "direct" && !isAddress(values.targetWorker.trim())) {
+    return { ok: false, errors: { ...errors, targetWorker: "Enter a valid worker wallet address (0x…)." } };
+  }
+  return { ok: result.success, errors };
 }
 
 function flattenZodErrors(result: z.SafeParseReturnType<unknown, unknown>) {
