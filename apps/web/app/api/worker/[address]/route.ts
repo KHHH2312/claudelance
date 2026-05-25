@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { Address } from "viem";
 
 import { fetchWorkerHistory } from "@/lib/worker-history";
+import { fetchWorkerIdentity } from "@/lib/worker-identity";
 import { fetchWorkerStats } from "@/lib/worker-stats";
 
 export const revalidate = 30;
@@ -20,14 +21,17 @@ export async function GET(_request: Request, { params }: { params: Params }) {
   const lowercased = address.toLowerCase() as Address;
 
   try {
-    const [stats, history] = await Promise.all([
+    const [stats, history, identity] = await Promise.all([
       fetchWorkerStats(lowercased),
       fetchWorkerHistory(lowercased).catch(() => []),
+      fetchWorkerIdentity(lowercased),
     ]);
 
     return NextResponse.json(
       {
         address: lowercased,
+        hasIdentity: identity.hasIdentity,
+        identityRegistry: identity.registry,
         earnings: stats.earnings.map((row) => ({
           symbol: row.symbol,
           token: row.token,
