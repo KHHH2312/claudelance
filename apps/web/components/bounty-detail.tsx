@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useAccount, useChainId, useWriteContract } from "wagmi";
+import {
+  useAccount,
+  useChainId,
+  useReadContract,
+  useWaitForTransactionReceipt,
+  useWriteContract,
+} from "wagmi";
 import Link from "next/link";
 import { CheckCircle2, ExternalLink, Loader2, Lock, ShieldCheck, Upload } from "lucide-react";
 import {
@@ -18,6 +24,29 @@ import { DEFAULT_CHAIN_ID } from "@/lib/chain";
 import { formatTokenAmount } from "@/lib/format-token";
 import { miniPayFeeCurrency } from "@/lib/wallet/fee-currency";
 import { cn, shortAddress } from "@/lib/utils";
+
+const erc20Abi = [
+  {
+    type: "function",
+    name: "approve",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "allowance",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+] as const;
 
 type Submission = {
   worker: string;
@@ -544,18 +573,60 @@ function ClaimSlotCard({
   token: string;
 }) {
   const chainId = useChainId();
+  const { address } = useAccount();
   const { writeContractAsync, isPending } = useWriteContract();
   const [txHash, setTxHash] = React.useState<Hash | null>(null);
+  const [approveHash, setApproveHash] = React.useState<Hash | null>(null);
   useTransactionToast(txHash, {
     pendingMessage: "Claiming slot",
     confirmedMessage: "Slot claimed",
     failedMessage: "Claim failed",
   });
+  useTransactionToast(approveHash, {
+    pendingMessage: "Approving stake",
+    confirmedMessage: "Stake approved",
+    failedMessage: "Approval failed",
+  });
 
   const isFull = claimedSlots >= maxSlots;
   const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID)!.core as Address;
   const { symbol: tokenSymbol, decimals } = tokenMeta(token);
-  const stakeFormatted = formatTokenAmount(BigInt(stakeRequired), decimals, 4);
+  const stake = BigInt(stakeRequired);
+  const stakeFormatted = formatTokenAmount(stake, decimals, 4);
+
+  // claimSlot pulls the stake via transferFrom, so the worker must approve the
+  // Core for the stake token first or the claim reverts on insufficient allowance.
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: token as Address,
+    abi: erc20Abi,
+    functionName: "allowance",
+    args: address ? [address, core] : undefined,
+    query: { enabled: Boolean(address) && stake > 0n },
+  });
+  const { data: approveReceipt } = useWaitForTransactionReceipt({
+    hash: approveHash ?? undefined,
+  });
+  React.useEffect(() => {
+    if (approveReceipt?.status === "success") void refetchAllowance();
+  }, [approveReceipt, refetchAllowance]);
+
+  const needsApproval =
+    stake > 0n && (allowance === undefined || (allowance as bigint) < stake);
+
+  const approve = async () => {
+    try {
+      const hash = (await writeContractAsync({
+        address: token as Address,
+        abi: erc20Abi,
+        functionName: "approve",
+        args: [core, stake],
+        feeCurrency: miniPayFeeCurrency(),
+      })) as Hash;
+      setApproveHash(hash);
+    } catch {
+      // User rejected
+    }
+  };
 
   const claim = async () => {
     try {
@@ -588,16 +659,35 @@ function ClaimSlotCard({
               : `Claim a slot by staking ${stakeFormatted} ${tokenSymbol}. You'll need an ERC-8004 Agent Identity on Celo Mainnet.`}
           </p>
           {!isFull && (
-            <Button size="sm" className="mt-4" onClick={claim} disabled={isPending}>
-              {isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Claiming
-                </>
-              ) : (
-                "Claim slot"
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {needsApproval && (
+                <Button size="sm" variant="outline" onClick={approve} disabled={isPending}>
+                  {isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Approving
+                    </>
+                  ) : (
+                    `Approve ${stakeFormatted} ${tokenSymbol}`
+                  )}
+                </Button>
               )}
-            </Button>
+              <Button size="sm" onClick={claim} disabled={isPending || needsApproval}>
+                {isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Claiming
+                  </>
+                ) : (
+                  "Claim slot"
+                )}
+              </Button>
+            </div>
+          )}
+          {!isFull && needsApproval && allowance !== undefined && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Approve the stake token first — claim unlocks once the allowance is confirmed onchain.
+            </p>
           )}
         </div>
       </div>
