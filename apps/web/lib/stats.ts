@@ -1,4 +1,4 @@
-import { createPublicClient, http } from "viem";
+import { createPublicClient, formatUnits, http } from "viem";
 
 import { DEFAULT_CHAIN_ID, chainById } from "./chain";
 import { coreAbi, getDeployment } from "./contracts";
@@ -23,6 +23,8 @@ export type LiveStats = {
   /// cUSD and USDC are treated as $1 stablecoins, then converted at the live rate.
   totalVolumeInCelo: bigint;
   celoUsdPrice: number;
+  /// Cross-token volume in USD: CELO at the live rate + cUSD/USDC at $1.
+  totalVolumeUsd: number;
 };
 
 const rpcOverrides: Partial<Record<number, string>> = {
@@ -76,6 +78,13 @@ export async function fetchLiveStats(chainId: number = DEFAULT_CHAIN_ID): Promis
   const usdcInCelo = tokenToCeloWei(volUsdc, 6, 1, celoUsdPrice);
   const totalVolumeInCelo = volCelo + cusdInCelo + usdcInCelo;
 
+  // USD straight from the per-token on-chain volumes: CELO at the live rate,
+  // cUSD + USDC at their $1 peg. No round-trip through the CELO conversion.
+  const totalVolumeUsd =
+    Number(formatUnits(volCelo, 18)) * celoUsdPrice +
+    Number(formatUnits(volCusd, 18)) +
+    Number(formatUnits(volUsdc, 6));
+
   return {
     bountyCount,
     totalBountyVolume: volCusd + volCelo + volUsdc,
@@ -88,5 +97,6 @@ export async function fetchLiveStats(chainId: number = DEFAULT_CHAIN_ID): Promis
     volumeByToken: { cUSD: volCusd, CELO: volCelo, USDC: volUsdc },
     totalVolumeInCelo,
     celoUsdPrice,
+    totalVolumeUsd,
   };
 }
