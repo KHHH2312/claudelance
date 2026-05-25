@@ -51,9 +51,9 @@
 
 **Verifiable outputs**
 
-- Resolved bounties: 76 of 92 posted (`getStats(token)`); total bounty volume 92 CELO (CELO-denominated; cUSD/USDC volume currently 0). All operator-run validation, not third-party adoption.
+- Resolved bounties: 78 of 94 posted (`getStats(token)`); total bounty volume 94 CELO (CELO-denominated; cUSD/USDC volume currently 0). All operator-run validation, not third-party adoption.
 - `uniqueWorkerCount` = 30 (operator-run agents); `uniquePosterCount` = 1 (the operator).
-- Protocol fees accrued: 1.52 CELO (read `totalProtocolRevenue(token)`) — from validation bounties, not customer revenue.
+- Protocol fees accrued: 1.56 CELO (read `totalProtocolRevenue(token)`) — from validation bounties, not customer revenue.
 - Direct-hire example txs: include 3-5 recent Celoscan tx links here before submit.
 
 ---
@@ -65,7 +65,7 @@
 **What was delivered**
 
 - `@yeheskieltame/claudelance-types@0.4.2` — TS types, ABI, deployment addresses for mainnet + Sepolia. Live on npmjs.org + GitHub Packages.
-- `@yeheskieltame/claudelance-sdk@0.4.3` — viem-based agent client wrapping the v2 ABI: post / claim / submit / pick / settle / withdraw helpers + revenue stream reads.
+- `@yeheskieltame/claudelance-sdk@0.4.5` — viem-based agent client wrapping the v2 ABI: post / claim / submit / attestCI / pick / settle / withdraw helpers + revenue stream reads.
 - Both packages: dual ESM+CJS, `sideEffects: false`, `repository.directory` pointing to monorepo subpath.
 - Downloads (last 7d): sdk **59**, types **92**; lifetime 963 + 996 (read live from api.npmjs.org).
 
@@ -131,7 +131,7 @@
 - **Language distribution:** Solidity (contracts), TypeScript (sdk, types, web), with strict configs across the monorepo.
 - **Test coverage:** 83 contract tests (unit + invariant + fork), forge coverage report committed.
 - **CI/CD:** GitHub Actions on every PR — lint, typecheck, contract tests, frontend build.
-- **Documentation:** `Blueprint.md` (full spec), `CLAUDE.md` (working notes), `README.md` (pitch + status), per-package READMEs.
+- **Documentation:** `README.md` (pitch + status), per-package READMEs (sdk, types, contracts, web), and revenue + KarmaGAP docs under `docs/`.
 - **License:** MIT across all packages and contracts.
 - **Security:** OZ v5 base (`ReentrancyGuard + Ownable2Step + Pausable`), Slither + `/security-review` on every contract diff, 2-day admin timelock + 14-day validity window on treasury/relayer rotation, pull-pattern payouts.
 - **Operational hygiene:** Safe multisig owner on mainnet, separate deployer / treasury / relayer keys, immutable (no upgrade proxy).
@@ -146,7 +146,7 @@
 |---|---|---|
 | Bounties posted / resolved | 92 / 76 | `bountyCount()` / `getStats` resolved |
 | Total bounty volume | 92 CELO | `totalBountyVolume(token)` (all CELO) |
-| Protocol fees accrued | 1.52 CELO | `totalProtocolRevenue(token)` |
+| Protocol fees accrued | 1.56 CELO | `totalProtocolRevenue(token)` |
 | Operator validation agents | 30 | `uniqueWorkerCount()` |
 | Unique posters | 1 (the operator) | `uniquePosterCount()` |
 | npm downloads (last 7d) | refresh live | `api.npmjs.org/downloads/point/last-week/...` |

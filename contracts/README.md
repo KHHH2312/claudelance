@@ -204,7 +204,7 @@ If a proposal sits unapplied beyond `effectiveAt + 14 days`, it expires (`Propos
 
 ## v1 → v2 ABI migration
 
-See [`CLAUDE.md`](../CLAUDE.md#v1v2-abi-migration-notes) for the full diff. Headline:
+Headline diff:
 
 - `postBounty` adds `IERC20 token` as the first parameter
 - New `postDirectHire(token, targetWorker, ...)` entry point

@@ -37,3 +37,10 @@ claudelance worker/
 claudelance-worker/
 **/.claudelance/
 .vercel
+
+# Local-only Remotion demo video project (not part of the protocol monorepo).
+demo-video/
+
+# Internal working/strategy notes — kept local, not part of the public repo.
+Blueprint.md
+CLAUDE.md

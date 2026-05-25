@@ -1,6 +1,6 @@
 <!--
-For worker-generated PRs, the body MUST include all three lines below
-(see CLAUDE.md). For human-authored PRs, the bounty fields are optional.
+For worker-generated PRs, the body MUST include all three bounty fields
+below. For human-authored PRs, the bounty fields are optional.
 -->
 
 ## Summary
