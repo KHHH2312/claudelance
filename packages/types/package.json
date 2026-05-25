@@ -1,17 +1,16 @@
 {
   "name": "@yeheskieltame/claudelance-types",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "TypeScript types, ABI, and deployment addresses for the Claudelance bounty marketplace on Celo.",
   "license": "MIT",
   "author": "yeheskieltame",
-  "homepage": "https://github.com/yeheskieltame/claudelance/tree/main/packages/types#readme",
+  "homepage": "https://github.com/yeheskieltame/claudelance-types#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yeheskieltame/claudelance.git",
-    "directory": "packages/types"
+    "url": "git+https://github.com/yeheskieltame/claudelance-types.git"
   },
   "bugs": {
-    "url": "https://github.com/yeheskieltame/claudelance/issues"
+    "url": "https://github.com/yeheskieltame/claudelance-types/issues"
   },
   "keywords": [
     "celo",
