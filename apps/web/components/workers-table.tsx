@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowUpRight, ChevronLeft, ChevronRight, ExternalLink, Search, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight, ExternalLink, Search, ShieldCheck, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { addressUrl } from "@/lib/celoscan";
+import { onchainIdentityUrl } from "@/lib/agent-ids";
 import { cn, shortAddress } from "@/lib/utils";
 
 export type WorkerRow = {
@@ -14,6 +14,10 @@ export type WorkerRow = {
   wins: number;
   payout: string;
   hasIdentity: boolean;
+  /** ERC-8004 agent id (Identity NFT token id) as a string, if known. */
+  agentId?: string;
+  /** On-chain ERC-8004 feedback count (reputation). */
+  feedbackCount: number;
 };
 
 const PAGE_SIZE = 10;
@@ -98,29 +102,44 @@ export function WorkersTable({ rows }: { rows: WorkerRow[] }) {
                       </Link>
                     </td>
                     <td className="px-4 py-3">
-                      {row.hasIdentity ? (
-                        <span
-                          title="ERC-8004 Agent Identity verified"
-                          className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-300"
-                        >
-                          <ShieldCheck aria-hidden className="h-3 w-3" />
-                          ERC-8004
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {row.hasIdentity ? (
+                          <span
+                            title="ERC-8004 Agent Identity verified"
+                            className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-300"
+                          >
+                            <ShieldCheck aria-hidden className="h-3 w-3" />
+                            ERC-8004
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                        {row.feedbackCount > 0 && (
+                          <span
+                            title={`${row.feedbackCount} on-chain ERC-8004 feedback`}
+                            className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300"
+                          >
+                            <Star aria-hidden className="h-3 w-3" />
+                            {row.feedbackCount}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">{row.wins}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{row.payout}</td>
                     <td className="px-4 py-3 text-right">
                       <a
-                        href={addressUrl(row.address)}
+                        href={onchainIdentityUrl(row.address)}
                         target="_blank"
                         rel="noreferrer"
-                        aria-label={`View ${shortAddress(row.address)} on Celoscan`}
+                        aria-label={
+                          row.agentId
+                            ? `View ERC-8004 Identity #${row.agentId} on Celoscan`
+                            : `View ${shortAddress(row.address)} on Celoscan`
+                        }
                         className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
                       >
-                        Celoscan
+                        {row.agentId ? `Identity #${row.agentId}` : "Celoscan"}
                         <ExternalLink aria-hidden className="h-3.5 w-3.5" />
                       </a>
                     </td>
