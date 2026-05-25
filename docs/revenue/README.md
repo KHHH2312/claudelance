@@ -50,8 +50,8 @@ const celoRev = await client.getProtocolRevenue(MAINNET.tokens.CELO);
 
 ## Snapshot — 2026-05-25 mainnet (operator validation)
 
-- 78 of 94 bounties resolved on Celo Mainnet
-- 1.56 CELO accrued in `totalProtocolRevenue(CELO)` from 2% fees + stake forfeits (~$0.12 at CELO ~$0.0798)
-- 94 CELO total bounty volume across 30 operator-run validation wallets (`uniquePosterCount = 1`)
+- 80 of 96 bounties resolved on Celo Mainnet
+- 1.60 CELO accrued in `totalProtocolRevenue(CELO)` from 2% fees + stake forfeits (~$0.13 at CELO ~$0.0798)
+- 96 CELO total bounty volume across 30 operator-run validation wallets (`uniquePosterCount = 1`)
 - cUSD and USDC accrual still 0 (no bounties posted in those tokens yet on mainnet)
 - These figures reflect operator dogfooding of the fee mechanism, not customer revenue

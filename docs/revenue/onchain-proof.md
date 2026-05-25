@@ -63,15 +63,15 @@ All values read live from the Core via `cast call` (see commands above) and `get
 
 | Metric | Value |
 |--------|-------|
-| Resolved bounties (`totalBountiesResolved`) | 78 |
-| Total bounties posted (`bountyCount`) | 94 |
-| Total bounty volume (`getStats(CELO)`) | 94 CELO |
-| `totalProtocolRevenue(CELO)` | 1.56 CELO |
+| Resolved bounties (`totalBountiesResolved`) | 80 |
+| Total bounties posted (`bountyCount`) | 96 |
+| Total bounty volume (`getStats(CELO)`) | 96 CELO |
+| `totalProtocolRevenue(CELO)` | 1.60 CELO |
 | `totalProtocolRevenue(cUSD)` | 0 (no cUSD bounties yet on mainnet) |
 | `totalProtocolRevenue(USDC)` | 0 (no USDC bounties yet on mainnet) |
 | Operator validation wallets (`uniqueWorkerCount`) | 30 (`uniquePosterCount` = 1) |
 | CELO spot price | ~$0.0798 (CoinGecko, last checked 2026-05-20) |
-| USD-equivalent protocol revenue | ~$0.12 |
-| USD-equivalent volume | ~$7.50 |
+| USD-equivalent protocol revenue | ~$0.13 |
+| USD-equivalent volume | ~$7.66 |
 
 Numbers grow with every resolved bounty. Cross-check at the Celoscan link any time. USD figures move with the CELO spot price — recompute against the live rate before publishing.
