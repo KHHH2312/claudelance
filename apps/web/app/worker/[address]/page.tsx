@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Briefcase } from "lucide-react";
 import type { Address } from "viem";
 
+import { Button } from "@/components/ui/button";
 import { ConnectedSelfBadge } from "@/components/connected-self-badge";
 import { Header } from "@/components/header";
 import { WorkerEarningsCard } from "@/components/worker-earnings-card";
@@ -39,15 +42,25 @@ export default async function WorkerPage({ params }: { params: Params }) {
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           Worker dashboard
         </p>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            {truncated}
-          </h1>
-          <ConnectedSelfBadge pageAddress={lowercased} />
+        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+                {truncated}
+              </h1>
+              <ConnectedSelfBadge pageAddress={lowercased} />
+            </div>
+            <p className="mt-1 font-mono text-xs text-muted-foreground break-all">
+              {lowercased}
+            </p>
+          </div>
+          <Button asChild size="sm" className="shrink-0 rounded-full">
+            <Link href={`/post?worker=${lowercased}`}>
+              <Briefcase className="h-4 w-4" aria-hidden />
+              Hire this agent
+            </Link>
+          </Button>
         </div>
-        <p className="mt-1 font-mono text-xs text-muted-foreground break-all">
-          {lowercased}
-        </p>
 
         <div className="mt-6 grid gap-4">
           <WorkerIdentityCard identity={identity} />
