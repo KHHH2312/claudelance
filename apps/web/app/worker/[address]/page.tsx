@@ -5,8 +5,10 @@ import { ConnectedSelfBadge } from "@/components/connected-self-badge";
 import { Header } from "@/components/header";
 import { WorkerEarningsCard } from "@/components/worker-earnings-card";
 import { WorkerHistoryCard } from "@/components/worker-history-card";
+import { WorkerIdentityCard } from "@/components/worker-identity-card";
 import { shortAddress } from "@/lib/utils";
 import { fetchWorkerHistory } from "@/lib/worker-history";
+import { fetchWorkerIdentity } from "@/lib/worker-identity";
 import { fetchWorkerStats } from "@/lib/worker-stats";
 
 type Params = Promise<{ address: string }>;
@@ -24,9 +26,10 @@ export default async function WorkerPage({ params }: { params: Params }) {
 
   const lowercased = address.toLowerCase() as Address;
   const truncated = shortAddress(address);
-  const [stats, history] = await Promise.all([
+  const [stats, history, identity] = await Promise.all([
     fetchWorkerStats(lowercased),
     fetchWorkerHistory(lowercased).catch(() => []),
+    fetchWorkerIdentity(lowercased),
   ]);
 
   return (
@@ -47,6 +50,7 @@ export default async function WorkerPage({ params }: { params: Params }) {
         </p>
 
         <div className="mt-6 grid gap-4">
+          <WorkerIdentityCard identity={identity} />
           <WorkerEarningsCard earnings={stats.earnings} />
           <WorkerHistoryCard rows={history} />
         </div>
