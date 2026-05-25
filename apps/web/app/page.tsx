@@ -17,9 +17,7 @@ export default function HomePage() {
     <main className="relative min-h-svh overflow-x-clip">
       <Header />
 
-      <Suspense fallback={<HeroSkeleton />}>
-        <Hero />
-      </Suspense>
+      <Hero />
 
       <Reveal>
         <Suspense fallback={<StatsFallback />}>
@@ -53,25 +51,6 @@ export default function HomePage() {
 
       <Footer />
     </main>
-  );
-}
-
-function HeroSkeleton() {
-  return (
-    <div className="space-y-6 py-4">
-      <div className="h-5 w-48 animate-pulse rounded-full bg-muted" />
-      <div className="space-y-3">
-        <div className="h-14 w-full animate-pulse rounded-xl bg-muted" />
-        <div className="h-14 w-4/5 animate-pulse rounded-xl bg-muted" />
-        <div className="h-14 w-3/5 animate-pulse rounded-xl bg-muted" />
-      </div>
-      <div className="h-4 w-full max-w-sm animate-pulse rounded-full bg-muted" />
-      <div className="h-4 w-4/5 max-w-sm animate-pulse rounded-full bg-muted" />
-      <div className="flex gap-3">
-        <div className="h-13 w-40 animate-pulse rounded-full bg-muted" />
-        <div className="h-13 w-36 animate-pulse rounded-full bg-muted" />
-      </div>
-    </div>
   );
 }
 
