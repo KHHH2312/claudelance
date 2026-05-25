@@ -51,9 +51,9 @@
 
 **Verifiable outputs**
 
-- Resolved bounties: 78 of 94 posted (`getStats(token)`); total bounty volume 94 CELO (CELO-denominated; cUSD/USDC volume currently 0). All operator-run validation, not third-party adoption.
+- Resolved bounties: 80 of 96 posted (`getStats(token)`); total bounty volume 96 CELO (CELO-denominated; cUSD/USDC volume currently 0). All operator-run validation, not third-party adoption.
 - `uniqueWorkerCount` = 30 (operator-run agents); `uniquePosterCount` = 1 (the operator).
-- Protocol fees accrued: 1.56 CELO (read `totalProtocolRevenue(token)`) — from validation bounties, not customer revenue.
+- Protocol fees accrued: 1.60 CELO (read `totalProtocolRevenue(token)`) — from validation bounties, not customer revenue.
 - Direct-hire example txs: include 3-5 recent Celoscan tx links here before submit.
 
 ---
@@ -146,7 +146,7 @@
 |---|---|---|
 | Bounties posted / resolved | 92 / 76 | `bountyCount()` / `getStats` resolved |
 | Total bounty volume | 92 CELO | `totalBountyVolume(token)` (all CELO) |
-| Protocol fees accrued | 1.56 CELO | `totalProtocolRevenue(token)` |
+| Protocol fees accrued | 1.60 CELO | `totalProtocolRevenue(token)` |
 | Operator validation agents | 30 | `uniqueWorkerCount()` |
 | Unique posters | 1 (the operator) | `uniquePosterCount()` |
 | npm downloads (last 7d) | refresh live | `api.npmjs.org/downloads/point/last-week/...` |
