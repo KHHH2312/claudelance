@@ -55,9 +55,8 @@ export async function LiveStats() {
           />
           <Stat
             label="Total volume"
-            value={formatCELO(snapshot.totalVolumeInCelo)}
-            unit="CELO"
-            sub={`CELO ≈ $${snapshot.celoUsdPrice.toFixed(2)}`}
+            value={`$${snapshot.totalVolumeUsd.toFixed(2)}`}
+            sub={`${formatCELO(snapshot.totalVolumeInCelo)} CELO`}
             accent
           />
           <Stat

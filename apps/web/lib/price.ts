@@ -1,4 +1,6 @@
-const CELO_USD_FALLBACK = 0.4;
+// Only used if the live CoinGecko fetch fails; kept near the current CELO spot
+// so a price-API outage can't grossly distort the displayed USD.
+const CELO_USD_FALLBACK = 0.08;
 
 type CoingeckoResponse = {
   celo?: { usd?: number };
