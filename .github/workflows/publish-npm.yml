@@ -82,3 +82,32 @@ jobs:
           else
             pnpm -r --filter "./packages/*" publish --access public --no-git-checks
           fi
+
+      - name: Verify published versions on npm
+        # Guards against a silent publish that never lands: for a pkg-v<semver>
+        # tag, assert every package whose version matches the tag is actually
+        # live on npmjs (with retries for registry propagation).
+        if: startsWith(github.ref, 'refs/tags/pkg-v')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#pkg-v}"
+          echo "Verifying packages at $TAG_VERSION are live on npm..."
+          FAIL=0
+          for pkg_json in packages/*/package.json; do
+            [ -f "$pkg_json" ] || continue
+            NAME=$(node -p "require('./$pkg_json').name")
+            LOCAL=$(node -p "require('./$pkg_json').version")
+            [ "$LOCAL" = "$TAG_VERSION" ] || continue
+            PUBLISHED=""
+            for _ in 1 2 3 4 5 6; do
+              PUBLISHED=$(npm view "$NAME@$TAG_VERSION" version 2>/dev/null || echo "")
+              [ "$PUBLISHED" = "$TAG_VERSION" ] && break
+              sleep 5
+            done
+            if [ "$PUBLISHED" = "$TAG_VERSION" ]; then
+              echo "OK  $NAME@$TAG_VERSION is live on npm"
+            else
+              echo "::error::$NAME@$TAG_VERSION not found on npm after publish"
+              FAIL=1
+            fi
+          done
+          exit $FAIL
