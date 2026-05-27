@@ -11,9 +11,10 @@ const [bountyResolvedEvent] = parseAbi([
 
 const rpcOverride = process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
 
-/** Approximate 12 days at Celo's ~5s blocktime — wide enough for the
- *  worker dashboard to surface a rolling history without a paginator. */
-const HISTORY_WINDOW_BLOCKS = 200_000n;
+/** ~23 days at Celo's L2 1s blocktime — covers the full contract history to
+ *  date so the worker dashboard surfaces every win without a paginator. The
+ *  query is filtered by the indexed `winner`, so the wide range stays cheap. */
+const HISTORY_WINDOW_BLOCKS = 2_000_000n;
 
 export type WorkerHistoryRow = {
   bountyId: bigint;
