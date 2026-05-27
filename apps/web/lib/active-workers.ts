@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createPublicClient, http, parseAbi, type Address } from "viem";
+import { createPublicClient, http, parseAbi, zeroAddress, type Address } from "viem";
 
 import { celoMainnet } from "@/lib/chain";
 import { getDeployment } from "@/lib/contracts";
@@ -15,21 +15,49 @@ const reputationAbi = parseAbi([
   "function getSummary(uint256 agentId, address[] clients, string tag1, string tag2) view returns (uint64 count, int128 score, uint8 avg)",
 ]);
 
-const bountyResolvedEvent = parseAbi([
-  "event BountyResolved(uint256 indexed bountyId, address indexed winner, uint96 winnerPayout, uint96 protocolFee)",
-]);
+const coreAbi = [
+  { type: "function", name: "bountyCount", inputs: [], outputs: [{ type: "uint256" }], stateMutability: "view" },
+  {
+    type: "function",
+    name: "getBounty",
+    inputs: [{ name: "bountyId", type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "poster", type: "address" },
+          { name: "amount", type: "uint96" },
+          { name: "winner", type: "address" },
+          { name: "stakeRequired", type: "uint96" },
+          { name: "token", type: "address" },
+          { name: "deadline", type: "uint64" },
+          { name: "maxSlots", type: "uint8" },
+          { name: "claimedSlots", type: "uint8" },
+          { name: "bountyType", type: "uint8" },
+          { name: "ciRequired", type: "bool" },
+          { name: "targetWorker", type: "address" },
+          { name: "status", type: "uint8" },
+          { name: "targetRepoUrl", type: "string" },
+          { name: "instructionUrl", type: "string" },
+          { name: "requirementsHash", type: "bytes32" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+] as const;
 
 const rpcOverride = process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
 
-/** ~6 days at Celo's 5s blocktime — leaderboard window short enough
- *  to reflect recent activity, long enough to avoid an empty list. */
-const LEADERBOARD_WINDOW_BLOCKS = 100_000n;
+/** BountyStatus.Resolved (IClaudelanceCore enum: Open=0, Resolved=1, ...). */
+const STATUS_RESOLVED = 1;
+const PROTOCOL_FEE_BPS = 200n;
+const BPS_DENOMINATOR = 10_000n;
 
 export type ActiveWorker = {
   address: Address;
   wins: number;
   totalPayout: bigint;
-  lastBlock: bigint;
   hasIdentity: boolean;
   /** ERC-8004 agent id (Identity NFT token id), if known. */
   agentId?: bigint;
@@ -37,40 +65,64 @@ export type ActiveWorker = {
   feedbackCount: number;
 };
 
+/** Net payout the winner received, matching the contract's fee math exactly. */
+function netPayout(amount: bigint): bigint {
+  return amount - (amount * PROTOCOL_FEE_BPS) / BPS_DENOMINATOR;
+}
+
+/**
+ * All-time worker leaderboard derived from authoritative contract storage:
+ * enumerate every bounty via `getBounty(1..bountyCount)` and aggregate the
+ * resolved winners. Reading state (not a `getLogs` window) sidesteps RPC log
+ * range limits and is immune to Celo's L2 blocktime — the list never silently
+ * empties between resolutions.
+ */
 export async function fetchActiveWorkers(): Promise<ActiveWorker[]> {
   const client = createPublicClient({ chain: celoMainnet, transport: http(rpcOverride) });
   const deploy = getDeployment(celoMainnet.id);
+  const core = deploy.core as Address;
 
-  const latest = await client.getBlockNumber();
-  const fromBlock =
-    latest > LEADERBOARD_WINDOW_BLOCKS ? latest - LEADERBOARD_WINDOW_BLOCKS : 0n;
+  const bountyCount = await client.readContract({
+    address: core,
+    abi: coreAbi,
+    functionName: "bountyCount",
+  });
+  if (bountyCount === 0n) return [];
 
-  const logs = await client.getLogs({
-    address: deploy.core as Address,
-    events: bountyResolvedEvent,
-    fromBlock,
-    toBlock: latest,
+  // Bounty ids are 1-indexed (`bountyId = ++bountyCount`).
+  const ids = Array.from({ length: Number(bountyCount) }, (_, i) => BigInt(i + 1));
+  const bountyResults = await client.multicall({
+    allowFailure: true,
+    contracts: ids.map((id) => ({
+      address: core,
+      abi: coreAbi,
+      functionName: "getBounty" as const,
+      args: [id] as const,
+    })),
   });
 
-  const map = new Map<Address, Omit<ActiveWorker, "hasIdentity" | "agentId" | "feedbackCount">>();
-  for (const log of logs) {
-    const winner = log.args.winner!;
-    const payout = log.args.winnerPayout!;
-    const block = log.blockNumber!;
-    const row = map.get(winner);
+  const map = new Map<Address, { address: Address; wins: number; totalPayout: bigint; lastId: bigint }>();
+  bountyResults.forEach((res, i) => {
+    if (res.status !== "success") return;
+    const b = res.result as { winner: Address; amount: bigint; status: number };
+    if (b.status !== STATUS_RESOLVED || b.winner === zeroAddress) return;
+    const id = ids[i]!;
+    const payout = netPayout(b.amount);
+    const row = map.get(b.winner);
     if (row) {
       row.wins += 1;
       row.totalPayout += payout;
-      if (block > row.lastBlock) row.lastBlock = block;
+      if (id > row.lastId) row.lastId = id;
     } else {
-      map.set(winner, { address: winner, wins: 1, totalPayout: payout, lastBlock: block });
+      map.set(b.winner, { address: b.winner, wins: 1, totalPayout: payout, lastId: id });
     }
-  }
+  });
 
   const workerList = Array.from(map.values()).sort((a, b) => {
     if (b.wins !== a.wins) return b.wins - a.wins;
-    return Number(b.lastBlock - a.lastBlock);
+    return Number(b.lastId - a.lastId);
   });
+  if (workerList.length === 0) return [];
 
   const identityResults = await client.multicall({
     allowFailure: true,
@@ -123,7 +175,9 @@ export async function fetchActiveWorkers(): Promise<ActiveWorker[]> {
   });
 
   return workerList.map((w, i) => ({
-    ...w,
+    address: w.address,
+    wins: w.wins,
+    totalPayout: w.totalPayout,
     hasIdentity:
       identityResults[i]?.status === "success" &&
       (identityResults[i].result as bigint) > 0n,
