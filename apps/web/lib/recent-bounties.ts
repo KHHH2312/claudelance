@@ -43,11 +43,12 @@ const getBountyAbi = [
 
 const rpcOverride = process.env.NEXT_PUBLIC_CELO_MAINNET_RPC;
 
-/** ~3 days at Celo's 5s blocktime — recent enough that the hero
- *  ticker shows fresh wins; small range keeps the getLogs call within
- *  public RPC limits. Quiet stretches fall back to the terminal's
+/** ~14 days at Celo's L2 1s blocktime. The feed only renders the latest
+ *  `limit` wins (sorted by block), so the window just bounds how far back we
+ *  look to find them — wide enough that the hero ticker isn't blanked by a
+ *  multi-day quiet stretch. Truly empty history falls back to the terminal's
  *  "listening" state. */
-const RECENT_WINDOW_BLOCKS = 50_000n;
+const RECENT_WINDOW_BLOCKS = 1_200_000n;
 
 function resolveTokenMeta(address: Address): { symbol: string; decimals: number } {
   const a = address.toLowerCase();
