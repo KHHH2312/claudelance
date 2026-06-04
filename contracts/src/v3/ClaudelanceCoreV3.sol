@@ -279,7 +279,7 @@ contract ClaudelanceCoreV3 is
         string calldata deliverableUrl,
         bytes32 deliverableHash,
         string calldata metadata
-    ) external {
+    ) external whenNotPaused {
         CoreStorage storage s = _s();
         Bounty storage b = s.bounties[bountyId];
         Submission storage sub = s.submissions[bountyId][msg.sender];
