@@ -23,7 +23,9 @@ import {
     NotClaimer,
     NothingToWithdraw,
     StakeAlreadySettled,
-    NoAgentIdentity
+    NoAgentIdentity,
+    DeadlinePassed,
+    GracePeriodActive
 } from "../../src/v3/types/ClaudelanceTypes.sol";
 import { TaskTypeLib } from "../../src/v3/libraries/TaskTypeLib.sol";
 import { EscrowLib } from "../../src/v3/libraries/EscrowLib.sol";
@@ -340,6 +342,108 @@ contract ClaudelanceCoreV3Test is Test {
         vm.prank(poster);
         vm.expectRevert();
         core.configureTaskType(50, cfg);
+    }
+
+    // ── submitDeliverable: deadline and paused guards ────────────
+
+    function test_submitDeliverable_revertsAfterDeadline() public {
+        uint256 id = _postAndClaim();
+        vm.warp(block.timestamp + 2 days); // past deadline (1 day)
+        vm.prank(worker);
+        vm.expectRevert(DeadlinePassed.selector);
+        core.submitDeliverable(id, DELIVERABLE_URL, DELIVERABLE_HASH, "");
+    }
+
+    function test_submitDeliverable_revertsWhenPaused() public {
+        uint256 id = _postAndClaim();
+        vm.prank(owner);
+        core.pause();
+        vm.prank(worker);
+        vm.expectRevert(); // Pausable: EnforcedPause
+        core.submitDeliverable(id, DELIVERABLE_URL, DELIVERABLE_HASH, "");
+    }
+
+    // ── settleStake: forfeiture path ─────────────────────────────
+
+    function test_settleStake_forfeitIfCIFailed() public {
+        uint256 id = _postAndClaim();
+
+        vm.prank(worker);
+        core.submitDeliverable(id, DELIVERABLE_URL, DELIVERABLE_HASH, "");
+
+        // Attest CI fail for worker
+        vm.prank(relayer);
+        core.attestCI(id, worker, false);
+
+        // Second worker claims, submits, passes CI, wins
+        vm.prank(worker2);
+        core.claimSlot(id);
+        vm.prank(worker2);
+        core.submitDeliverable(id, "https://gist.github.com/w2/other", keccak256("other"), "");
+        vm.prank(relayer);
+        core.attestCI(id, worker2, true);
+        vm.prank(poster);
+        core.pickWinner(id, worker2);
+
+        // Worker1 stake forfeited (CI failed)
+        uint256 treasuryBefore = cUSD.balanceOf(treasury);
+        core.settleStake(id, worker);
+
+        // Treasury earnings increased by stake
+        vm.prank(treasury);
+        core.withdrawEarnings(IERC20(address(cUSD)));
+        assertGt(cUSD.balanceOf(treasury), treasuryBefore);
+    }
+
+    // ── cancelExpired ────────────────────────────────────────────
+
+    function test_cancelExpired_refundsPoster() public {
+        uint256 id = _postCodeBounty();
+        uint256 posterBefore = cUSD.balanceOf(poster);
+
+        // Cannot cancel before grace period
+        vm.warp(block.timestamp + 2 days);
+        vm.expectRevert(GracePeriodActive.selector);
+        core.cancelExpired(id);
+
+        // After deadline + grace period (1 day + 3 days)
+        vm.warp(block.timestamp + 3 days);
+        core.cancelExpired(id);
+
+        assertEq(cUSD.balanceOf(poster), posterBefore + BOUNTY_AMOUNT);
+        assertEq(uint8(_getBounty(id).status), uint8(BountyStatus.Cancelled));
+    }
+
+    // ── Admin timelock: treasury rotation ───────────────────────
+
+    function test_applyTreasury_afterTimelock() public {
+        address newTreasury = makeAddr("newTreasury");
+
+        vm.prank(owner);
+        core.proposeTreasury(newTreasury);
+
+        // Cannot apply before timelock
+        vm.expectRevert();
+        core.applyTreasury();
+
+        // Apply after 2 days
+        vm.warp(block.timestamp + 2 days + 1);
+        core.applyTreasury();
+
+        // Post a bounty to verify new treasury receives fees
+        vm.prank(poster);
+        uint256 id = core.postBounty(IERC20(address(cUSD)), 0, REPO_URL, INSTRUCTION_URL, REQUIREMENTS_HASH, BOUNTY_AMOUNT, 1, STAKE_AMOUNT, DEADLINE_1DAY, false);
+        vm.prank(worker);
+        core.claimSlot(id);
+        vm.prank(worker);
+        core.submitDeliverable(id, DELIVERABLE_URL, DELIVERABLE_HASH, "");
+        vm.prank(poster);
+        core.pickWinner(id, worker);
+
+        // New treasury has earnings
+        vm.prank(newTreasury);
+        core.withdrawEarnings(IERC20(address(cUSD)));
+        assertGt(cUSD.balanceOf(newTreasury), 0);
     }
 
     // ── getStatsV3 ───────────────────────────────────────────────
