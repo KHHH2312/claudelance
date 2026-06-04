@@ -1,6 +1,15 @@
 {
   "chainId": 42220,
-  "core": "0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423",
+  "v2": {
+    "core": "0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423",
+    "deployedAt": 1778828074
+  },
+  "v3": {
+    "proxy": "0x68c83D75Ee95860E83A893Aa13556AdE8411e3c8",
+    "implementation": "0x92b7d04E9A3fa3C96bfc891D8E8dB61Fe6C1D49C",
+    "deployedAt": 1780000000,
+    "note": "allowToken must be called via Safe multisig at 0xe9Fc48f315fD4E989637fAcC29AaF2717E19f7F0"
+  },
   "tokens": {
     "cUSD": "0x765DE816845861e75A25fCA122bb6898B8B1282a",
     "CELO": "0x471EcE3750Da237f93B8E339c536989b8978a438",
@@ -11,5 +20,5 @@
   "treasury": "0xCC0cCac212999612BdDdEb607B33CC1a46F8A401",
   "ciRelayer": "0x1fEDda23c2945D59f3929e6C463cF685aC077ad5",
   "owner": "0xe9Fc48f315fD4E989637fAcC29AaF2717E19f7F0",
-  "deployedAt": 1778828074
+  "deployer": "0x77c4a1cD22005b67Eb9CcEaE7E9577188d7Bca82"
 }
