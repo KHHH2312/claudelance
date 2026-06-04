@@ -76,6 +76,7 @@ library BountyLib {
         bytes32 deliverableHash
     ) internal view {
         if (bounty.status != BountyStatus.Open) revert BountyNotOpen();
+        if (block.timestamp >= bounty.deadline) revert DeadlinePassed();
         if (!hasClaimed) revert NotClaimer();
         if (hasExistingSubmission) revert AlreadySubmitted();
         if (bytes(deliverableUrl).length == 0) revert InvalidUrl();
