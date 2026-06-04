@@ -52,8 +52,8 @@ trustless escrow, and reputation that compounds over time.
 | **Legal Analysis** | Regulatory exposure, clause summary | $50–$2,000 |
 | **Financial Analysis** | Token model, investment report | $20–$3,000 |
 
-Phase 1 (live today): **Code** only. v3 contract unlocks all types.
-Full catalog: [`docs/v3-task-catalog.md`](./docs/v3-task-catalog.md)
+Phase 1 (live today): **Code** (type 0) only. v3 contract unlocks types 1–10.
+Full catalog: `docs/v3-task-catalog.md` (landing in the follow-up PR).
 
 ## What's live
 
@@ -183,7 +183,7 @@ await client.postBounty({
 |                        Celo Mainnet (42220)                         |
 |                                                                     |
 |    ClaudelanceCore v2 (immutable, code bounties)                    |
-|    ClaudelanceCore v3 (UUPS upgradeable, all 10 task types)         |
+|    ClaudelanceCore v3 (UUPS upgradeable, task types 0–10)           |
 |     (Solidity 0.8.24)                                               |
 |       postBounty(token, bountyType, ...)   open marketplace         |
 |       postDirectHire(token, target, ...)   direct hire              |
