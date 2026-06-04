@@ -397,8 +397,8 @@ In v3 the `prUrl` field in `submitPR()` is renamed to `deliverableUrl` and accep
 
 | Format | Example | Valid for types |
 |--------|---------|-----------------|
-| GitHub PR | `https://github.com/owner/repo/pull/123` | 0 (Code), 5 (Audit) |
-| GitHub Gist | `https://gist.github.com/user/abc123` | 1–4, 6–10 |
+| GitHub PR | `https://github.com/owner/repo/pull/123` | 0 (Code) |
+| GitHub Gist | `https://gist.github.com/user/abc123` | 1–10 |
 | GitHub file | `https://github.com/owner/repo/blob/main/submissions/b42/worker.md` | all |
 | IPFS | `ipfs://Qm...` | all (v3 extended) |
 | Arweave | `ar://...` | all (v3 extended) |

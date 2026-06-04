@@ -57,7 +57,8 @@ ClaudelanceProxy (ERC1967Proxy)
 ```
 
 The proxy is deployed once. Each upgrade only redeploys the implementation and calls
-`upgradeTo(newImpl)` through the Safe multisig.
+`upgradeToAndCall(newImpl, "")` through the Safe multisig (OZ v5 removed `upgradeTo`;
+`upgradeToAndCall` is the only upgrade entrypoint).
 
 ---
 
@@ -103,7 +104,7 @@ struct CoreStorage {
 }
 
 bytes32 private constant CORE_STORAGE_SLOT =
-    keccak256(abi.encode(uint256(keccak256("claudelance.core.v3")) - 1)) & ~bytes32(uint256(0xff));
+    keccak256(abi.encode(uint256(keccak256(bytes("claudelance.core.v3"))) - 1)) & ~bytes32(uint256(0xff));
 ```
 
 ---
@@ -166,11 +167,12 @@ function initialize(
     IERC721 _identityRegistry,
     address _reputationRegistry
 ) external initializer {
-    __Ownable2Step_init();
+    // OZ v5: Ownable2StepUpgradeable inherits __Ownable_init; pass owner here.
+    // There is no parameterless __Ownable2Step_init in OZ v5.
+    __Ownable_init(_owner);
     __Pausable_init();
     __ReentrancyGuard_init();
     __UUPSUpgradeable_init();
-    _transferOwnership(_owner);
     // ... set storage fields
 }
 ```
