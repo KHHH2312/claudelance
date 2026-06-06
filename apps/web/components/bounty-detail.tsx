@@ -11,8 +11,8 @@ import {
 import Link from "next/link";
 import { CheckCircle2, ExternalLink, Loader2, Lock, ShieldCheck, Upload } from "lucide-react";
 import {
-  CLAUDELANCE_CORE_ABI,
-  MAINNET,
+  CLAUDELANCE_CORE_V3_ABI,
+  TASK_TYPE_NAMES,
   deploymentByChainId,
 } from "@yeheskieltame/claudelance-types";
 import type { Address, Hash } from "viem";
@@ -50,9 +50,11 @@ const erc20Abi = [
 
 type Submission = {
   worker: string;
-  prUrl: string;
+  /** v3: any deliverable URL (PR, Gist, IPFS, etc.) */
+  deliverableUrl: string;
   ciPassed: boolean;
-  commitHash: string;
+  /** v3: keccak256 of deliverable content */
+  deliverableHash: string;
 };
 
 type BountyJson = {
@@ -65,10 +67,12 @@ type BountyJson = {
   deadline: string;
   maxSlots: number;
   claimedSlots: number;
+  bountyType: number;
   status: number;
   ciRequired: boolean;
   targetWorker: string;
   instructionUrl: string;
+  targetRepoUrl?: string;
   claimers: string[];
   submissions: Submission[];
 };
@@ -113,15 +117,15 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
                   <p className="text-sm font-medium">
                     {shortAddress(sub.worker)}
                   </p>
-                  {sub.prUrl && (
+                  {sub.deliverableUrl && (
                     <a
-                      href={sub.prUrl}
+                      href={sub.deliverableUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      View PR
+                      View deliverable
                     </a>
                   )}
                 </div>
@@ -179,9 +183,9 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
         <PickWinnerCard bountyId={bounty.id} submissions={bounty.submissions} />
       )}
 
-      {/* Claimer: submit PR */}
+      {/* Claimer: submit deliverable */}
       {isClaimer && isOpen && !hasSubmission && (
-        <SubmitPRCard bountyId={bounty.id} />
+        <SubmitDeliverableCard bountyId={bounty.id} bountyType={bounty.bountyType ?? 0} />
       )}
 
       {/* Worker: claim slot — open bounties, or direct hires only for the targeted worker */}
@@ -215,8 +219,7 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
         <GlassCard className="!p-6 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500" />
           <p className="mt-3 text-sm font-medium text-emerald-600 dark:text-emerald-300">
-            You&apos;ve submitted your PR. Waiting for the poster to pick a
-            winner.
+            You&apos;ve submitted your deliverable. Waiting for the poster to pick a winner.
           </p>
         </GlassCard>
       )}
@@ -295,7 +298,7 @@ function PickWinnerCard({
     try {
       const hash = (await writeContractAsync({
         address: core,
-        abi: CLAUDELANCE_CORE_ABI,
+        abi: CLAUDELANCE_CORE_V3_ABI,
         functionName: "pickWinner",
         args: [BigInt(bountyId), selected as Address],
         feeCurrency: miniPayFeeCurrency(),
@@ -359,30 +362,59 @@ function PickWinnerCard({
   );
 }
 
-function SubmitPRCard({ bountyId }: { bountyId: string }) {
+// Per-type placeholder hints for the deliverable URL.
+const DELIVERABLE_URL_HINT: Record<number, string> = {
+  0:  "https://github.com/owner/repo/pull/123",
+  1:  "https://gist.github.com/user/abc or ipfs://Qm...",
+  2:  "https://gist.github.com/user/abc or https://arweave.net/...",
+  3:  "https://gist.github.com/user/abc",
+  4:  "https://github.com/owner/repo/pull/123 or gist URL",
+  5:  "https://gist.github.com/user/abc (audit report)",
+  6:  "https://gist.github.com/user/abc (translated content)",
+  7:  "https://gist.github.com/user/abc or https://arweave.net/...",
+  8:  "https://gist.github.com/user/abc (legal analysis)",
+  9:  "https://gist.github.com/user/abc (financial analysis)",
+  10: "https://... (any verifiable URL matching poster spec)",
+};
+
+function SubmitDeliverableCard({ bountyId, bountyType = 0 }: { bountyId: string; bountyType?: number }) {
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
   const [txHash, setTxHash] = React.useState<Hash | null>(null);
   useTransactionToast(txHash, {
-    pendingMessage: "Submitting PR",
-    confirmedMessage: "PR submitted",
+    pendingMessage: "Submitting deliverable",
+    confirmedMessage: "Deliverable submitted",
     failedMessage: "Submit failed",
   });
 
-  const [prUrl, setPrUrl] = React.useState("");
-  const [commitSha, setCommitSha] = React.useState("");
+  const [deliverableUrl, setDeliverableUrl] = React.useState("");
+  const [contentHash, setContentHash] = React.useState("");
   const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID)!.core as Address;
 
-  const canSubmit = prUrl.startsWith("https://github.com/") && /^[0-9a-fA-F]{40}$/.test(commitSha);
+  // Validate: URL required; contentHash can be a 40-char commit SHA or 64-char keccak hex.
+  const canSubmit = (() => {
+    try { new URL(deliverableUrl); } catch { return false; }
+    if (!deliverableUrl) return false;
+    const h = contentHash.replace(/^0x/, "").toLowerCase();
+    return h.length === 40 || h.length === 64;
+  })();
+
+  const normalizeHash = (raw: string): `0x${string}` => {
+    const h = raw.replace(/^0x/, "").toLowerCase();
+    if (h.length === 40) return `0x${h.padEnd(64, "0")}` as `0x${string}`;
+    return `0x${h.padStart(64, "0")}` as `0x${string}`;
+  };
+
+  const typeName = TASK_TYPE_NAMES[bountyType as keyof typeof TASK_TYPE_NAMES] ?? "Task";
 
   const submit = async () => {
+    if (!canSubmit) return;
     try {
-      const padded = `0x${commitSha.toLowerCase()}000000000000000000000000` as Hash;
       const hash = (await writeContractAsync({
         address: core,
-        abi: CLAUDELANCE_CORE_ABI,
-        functionName: "submitPR",
-        args: [BigInt(bountyId), prUrl, padded, ""],
+        abi: CLAUDELANCE_CORE_V3_ABI,
+        functionName: "submitDeliverable",
+        args: [BigInt(bountyId), deliverableUrl, normalizeHash(contentHash), ""],
         feeCurrency: miniPayFeeCurrency(),
       })) as Hash;
       setTxHash(hash);
@@ -398,25 +430,25 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
           <Upload className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold">Submit your PR</h3>
+          <h3 className="font-semibold">Submit your {typeName} deliverable</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            You&apos;ve claimed this bounty. Submit your pull request URL and
-            commit hash (40 hex chars) to complete your entry.
+            You&apos;ve claimed this bounty. Paste the deliverable URL and its
+            content hash (commit SHA or keccak256) to complete your entry.
           </p>
           <div className="mt-4 space-y-3">
             <input
               type="url"
-              placeholder="https://github.com/yeheskieltame/claudelance/pull/123"
-              value={prUrl}
-              onChange={(e) => setPrUrl(e.target.value)}
+              placeholder={DELIVERABLE_URL_HINT[bountyType] ?? "https://..."}
+              value={deliverableUrl}
+              onChange={(e) => setDeliverableUrl(e.target.value)}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <input
               type="text"
-              placeholder="Commit SHA (40 hex chars)"
-              value={commitSha}
-              onChange={(e) => setCommitSha(e.target.value.replace(/^0x/, "").trim())}
-              maxLength={40}
+              placeholder="Commit SHA (40 hex) or keccak256 (64 hex)"
+              value={contentHash}
+              onChange={(e) => setContentHash(e.target.value.trim())}
+              maxLength={66}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <Button size="sm" onClick={submit} disabled={!canSubmit || isPending}>
@@ -426,7 +458,7 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
                   Submitting
                 </>
               ) : (
-                "Submit PR"
+                "Submit deliverable"
               )}
             </Button>
           </div>
@@ -458,7 +490,7 @@ function SettleStakeCard({
     try {
       const hash = (await writeContractAsync({
         address: core,
-        abi: CLAUDELANCE_CORE_ABI,
+        abi: CLAUDELANCE_CORE_V3_ABI,
         functionName: "settleStake",
         args: [BigInt(bountyId), worker],
         feeCurrency: miniPayFeeCurrency(),
@@ -513,7 +545,7 @@ function WithdrawEarningsCard({ token }: { token: string }) {
     try {
       const hash = (await writeContractAsync({
         address: core,
-        abi: CLAUDELANCE_CORE_ABI,
+        abi: CLAUDELANCE_CORE_V3_ABI,
         functionName: "withdrawEarnings",
         args: [token as Address],
         feeCurrency: miniPayFeeCurrency(),
@@ -552,10 +584,13 @@ function WithdrawEarningsCard({ token }: { token: string }) {
   );
 }
 
+// Import MAINNET_V3 for tokenMeta lookup (v3 same token addresses as v2 mainnet)
+import { MAINNET_V3 } from "@yeheskieltame/claudelance-types";
+
 function tokenMeta(tokenAddress: string): { symbol: string; decimals: number } {
   const addr = tokenAddress.toLowerCase();
-  if (addr === MAINNET.tokens.USDC.toLowerCase()) return { symbol: "USDC", decimals: 6 };
-  if (addr === MAINNET.tokens.cUSD.toLowerCase()) return { symbol: "cUSD", decimals: 18 };
+  if (addr === MAINNET_V3.tokens.USDC.toLowerCase()) return { symbol: "USDC", decimals: 6 };
+  if (addr === MAINNET_V3.tokens.cUSD.toLowerCase()) return { symbol: "cUSD", decimals: 18 };
   return { symbol: "CELO", decimals: 18 };
 }
 
@@ -632,7 +667,7 @@ function ClaimSlotCard({
     try {
       const hash = (await writeContractAsync({
         address: core,
-        abi: CLAUDELANCE_CORE_ABI,
+        abi: CLAUDELANCE_CORE_V3_ABI,
         functionName: "claimSlot",
         args: [BigInt(bountyId)],
         feeCurrency: miniPayFeeCurrency(),
