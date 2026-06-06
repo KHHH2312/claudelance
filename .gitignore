@@ -41,6 +41,7 @@ claudelance-worker/
 # Local-only Remotion demo video project (not part of the protocol monorepo).
 demo-video/
 
-# Internal working/strategy notes — kept local, not part of the public repo.
+# Internal strategy notes — kept local, not part of the public repo.
 Blueprint.md
-CLAUDE.md
+# CLAUDE.md is now tracked: it serves as the canonical working context for
+# the AI assistant and doubles as onboarding docs for new contributors.

@@ -4,12 +4,13 @@
 
 # `contracts/`
 
-Foundry workspace for `ClaudelanceCore.sol` — the immutable v2 contract behind the [Claudelance](../README.md) bounty marketplace. Multi-token escrow, ERC-8004 identity gate on workers, and a dual hire model (open marketplace + direct hire).
+Foundry workspace for the Claudelance smart contracts — [v2](#v2-live-deployments) (immutable, code bounties) and [v3](#v3-live-deployments) (UUPS upgradeable, 10 task types). Multi-token escrow (cUSD / CELO / USDC), ERC-8004 identity gate on workers, dual hire model.
 
-[![Mainnet](https://img.shields.io/badge/Celo%20Mainnet-LIVE-brightgreen)](https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code)
+[![v2 Mainnet](https://img.shields.io/badge/v2%20Mainnet-LIVE-brightgreen)](https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code)
+[![v3 Mainnet](https://img.shields.io/badge/v3%20Mainnet-LIVE-brightgreen)](https://celoscan.io/address/0x68c83D75Ee95860E83A893Aa13556AdE8411e3c8#code)
 [![Solidity](https://img.shields.io/badge/solidity-0.8.24-363636)](https://docs.soliditylang.org)
 [![OpenZeppelin v5](https://img.shields.io/badge/OpenZeppelin-v5-4E5EE4)](https://www.openzeppelin.com/contracts)
-[![Tests](https://img.shields.io/badge/tests-83%2F83-brightgreen)](#audit-posture)
+[![Tests](https://img.shields.io/badge/tests-144%2F144-brightgreen)](#audit-posture)
 [![Slither](https://img.shields.io/badge/slither-0%20findings-brightgreen)](#audit-posture)
 [![ERC-8004](https://img.shields.io/badge/ERC--8004-Identity%20gated-purple)](https://eips.ethereum.org/EIPS/eip-8004)
 [![sdk npm](https://img.shields.io/npm/v/@yeheskieltame/claudelance-sdk.svg?label=sdk&color=cb3837)](https://www.npmjs.com/package/@yeheskieltame/claudelance-sdk)
@@ -22,42 +23,70 @@ Foundry workspace for `ClaudelanceCore.sol` — the immutable v2 contract behind
 ```
 contracts/
   src/
-    ClaudelanceCore.sol            v2: multi-token + ERC-8004 + direct hire
+    ClaudelanceCore.sol            v2: immutable, code bounties only
     interfaces/IClaudelanceCore.sol
+    v3/
+      ClaudelanceCoreV3.sol        v3: UUPS upgradeable, task types 0-10
+      ClaudelanceProxy.sol         named ERC1967Proxy for Celoscan visibility
+      types/ClaudelanceTypes.sol   structs, enums, custom errors (file-level)
+      storage/ClaudelanceStorageV3.sol  EIP-7201 namespaced CoreStorage
+      libraries/
+        BountyLib.sol              validation helpers (pure/view)
+        TaskTypeLib.sol            type IDs 0-10 + defaultConfig()
+        EscrowLib.sol              fee math (pure)
+      interfaces/IClaudelanceCoreV3.sol
     mocks/
-      MockCUSD.sol                 legacy 18-decimal stand-in
-      MockERC20.sol                generic configurable-decimals ERC20 (used by DeployMocks)
+      MockERC20.sol                generic configurable-decimals ERC20
       MockIdentityRegistry.sol     ERC-721 stand-in for unit tests
   test/
-    ClaudelanceCore.t.sol          79 unit tests (multi-token + direct hire + identity gate)
-    invariant/                     4 invariants over 128k random transitions each
+    ClaudelanceCore.t.sol          79 unit tests (v2)
+    invariant/                     4 invariants over 128k random transitions
+    v3/
+      ClaudelanceCoreV3.t.sol      23 unit tests (v3 — mock contracts)
+      ClaudelanceCoreV3Fork.t.sol  38 fork tests (v3 — live Sepolia proxy)
   script/
-    Deploy.s.sol                   v2 deploy (token whitelist + 8004 registry args)
-    DeployMocks.s.sol              deploy 3 mock ERC20s (cUSD/CELO/USDC) for testnet
-    DeployMockCUSD.s.sol           legacy single-token mock deploy
-    SeedSepoliaV2.s.sol            E2E exercise: 62 tx, 7 bounties, multi-token + 8004
+    Deploy.s.sol                   v2 deploy
+    DeployV3.s.sol                 v3 proxy deploy + initialize + allowToken
+    DeployMocks.s.sol              3 mock ERC20s for testnet
+    SeedSepoliaV2.s.sol            E2E exercise: 62 tx, multi-token + 8004
   deployments/
-    celo-mainnet.json              source of truth for chain 42220 (v2 LIVE)
-    celo-sepolia.json              source of truth for chain 11142220 (v2 staging)
-  .deferred/                       v1-API scripts kept for reference; rewrite for v2 pending
+    celo-mainnet.json              v2 + v3 addresses, chain 42220
+    celo-sepolia.json              v2 + v3 addresses, chain 11142220
 ```
 
 ## Audit posture
 
+### v2 (ClaudelanceCore.sol)
+
 | Check | Result |
 |---|---|
-| Foundry unit tests (incl. direct hire + ERC-8004 + multi-token) | **79/79 pass** |
+| Foundry unit tests | **79/79 pass** |
 | Foundry invariant suite (256 runs * 500 calls / invariant) | **4/4 pass, 0 reverts** |
-| Security review of v2 diff (parallel agent + Slither) | **Cleared** — no Critical / High; 1 Medium documented inline |
-| Slither (filtered known-safe categories) | **0 findings** |
-| Sepolia E2E (`SeedSepoliaV2.s.sol`) | **62 onchain tx in one shot** — all green, treasury earnings reconciled |
-| Runtime contract size | **14,452 bytes** (59% of EIP-170 24,576 limit) |
-| Gas — `pickWinner` (poster hot path, O(1)) | ~153,000 |
-| Gas — `postBounty` (4-slot struct + token transfer + stats) | ~302,000 |
-| Gas — `postDirectHire` (same fields + targetWorker) | ~211,000 |
-| Gas — `claimSlot` (ERC-8004 balanceOf + stake transfer) | ~169,000 |
-| Gas — `settleStake` per worker | ~46,000 |
-| Gas — `withdrawEarnings` per token | ~42,000 |
+| Security review (parallel agent + Slither) | **Cleared** — no Critical / High; 1 Medium inline |
+| Slither | **0 findings** |
+| Sepolia E2E (`SeedSepoliaV2.s.sol`) | **62 onchain tx** — all green |
+| Runtime size | **14,452 bytes** (59% of 24,576 limit) |
+
+### v3 (ClaudelanceCoreV3.sol — UUPS proxy)
+
+| Check | Result |
+|---|---|
+| Unit tests (mock contracts) | **23/23 pass** |
+| Fork tests (live Sepolia proxy) | **38/38 pass** — all 18 security scenarios |
+| Security review | **Cleared** — no Critical / High / Medium |
+| v2 regression (run after v3 changes) | **79/79 pass** |
+| Total test count | **144 tests, 0 failures** |
+
+Gas (v3 proxy, approximate):
+
+| Function | Gas |
+|----------|-----|
+| `postBounty` | ~374,000 |
+| `claimSlot` (ERC-8004 + stake) | ~509,000 |
+| `submitDeliverable` | ~630,000 |
+| `pickWinner` (O(1)) | ~153,000 |
+| `settleStake` | ~46,000 |
+| `withdrawEarnings` | ~42,000 |
 
 Invariants covered:
 
@@ -97,10 +126,19 @@ Constants:
 
 ## Live deployments
 
+### v2 Live deployments
+
 | Network | Address | Status |
 |---------|---------|--------|
-| **Celo Mainnet (42220)** | [`0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423`](https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code) | **v2 LIVE**, verified |
-| Celo Sepolia (11142220) | [`0xC478e36CC213Cb459282b5B690bF8FF4975A911F`](https://sepolia.celoscan.io/address/0xc478e36cc213cb459282b5b690bf8ff4975a911f#code) | v2 staging, verified |
+| **Celo Mainnet (42220)** | [`0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423`](https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code) | **LIVE**, verified — code bounties |
+| Celo Sepolia (11142220) | [`0xC478e36CC213Cb459282b5B690bF8FF4975A911F`](https://sepolia.celoscan.io/address/0xc478e36cc213cb459282b5b690bf8ff4975a911f#code) | staging, verified |
+
+### v3 Live deployments
+
+| Network | Proxy | Implementation | Status |
+|---------|-------|----------------|--------|
+| **Celo Mainnet (42220)** | [`0x68c83D75Ee95860E83A893Aa13556AdE8411e3c8`](https://celoscan.io/address/0x68c83D75Ee95860E83A893Aa13556AdE8411e3c8#code) | [`0x92b7d04E9A3fa3C96bfc891D8E8dB61Fe6C1D49C`](https://celoscan.io/address/0x92b7d04E9A3fa3C96bfc891D8E8dB61Fe6C1D49C#code) | **LIVE**, verified, tokens whitelisted |
+| Celo Sepolia (11142220) | [`0x64b45Fe2C64951013389740AD530e5c664fd0Ffe`](https://sepolia.celoscan.io/address/0x64b45Fe2C64951013389740AD530e5c664fd0Ffe#code) | [`0x1fb667a40159e4652A89dDFC9ADF3eEcB6F0A572`](https://sepolia.celoscan.io/address/0x1fb667a40159e4652A89dDFC9ADF3eEcB6F0A572#code) | staging, verified |
 
 Always read addresses from `deployments/celo-{mainnet,sepolia}.json`. Never hardcode.
 
@@ -155,7 +193,45 @@ forge script script/Deploy.s.sol \
 
 When the script runs with shared admin wallets on testnet, it also auto-whitelists the three configured tokens at deploy time. On mainnet, the owner Safe must call `allowToken(token, minBounty)` separately for each token.
 
-### Mainnet — chainid 42220 (v2 LIVE)
+### v3 Sepolia — chainid 11142220
+
+```bash
+source .env
+TREASURY_ADDRESS=0x987e2ed458ddAF6f900362F94558378056dCc226 \
+CI_RELAYER_ADDRESS=0x987e2ed458ddAF6f900362F94558378056dCc226 \
+OWNER_ADDRESS=0x987e2ed458ddAF6f900362F94558378056dCc226 \
+IDENTITY_REGISTRY_ADDRESS=0x8004A818BFB912233c491871b3d84c89A494BD9e \
+REPUTATION_REGISTRY_ADDRESS=0x8004B663056A597Dffe9eCcC1965A193B7388713 \
+CUSD_ADDRESS=0xeB9595f4d14A4AEB23cc535007c973e50F1307E7 \
+CELO_ADDRESS=0x68128f321E01C2388628c549E3a4Ea016DB01968 \
+USDC_ADDRESS=0x71f44190dCE495b663700A3e96909988b8fbF3F9 \
+ALLOW_SHARED_ADMIN_WALLETS=true \
+forge script script/DeployV3.s.sol \
+  --rpc-url $CELO_SEPOLIA_RPC --broadcast --verify \
+  --private-key $DEPLOYER_PRIVATE_KEY
+```
+
+### v3 Mainnet — chainid 42220
+
+```bash
+source .env
+TREASURY_ADDRESS=$MAINNET_TREASURY_ADDRESS \
+CI_RELAYER_ADDRESS=$MAINNET_RELAYER_ADDRESS \
+OWNER_ADDRESS=$MAINNET_OWNER_ADDRESS \
+IDENTITY_REGISTRY_ADDRESS=0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 \
+REPUTATION_REGISTRY_ADDRESS=0x8004BAa17C55a88189AE136b182e5fdA19dE9b63 \
+CUSD_ADDRESS=0x765DE816845861e75A25fCA122bb6898B8B1282a \
+CELO_ADDRESS=0x471EcE3750Da237f93B8E339c536989b8978a438 \
+USDC_ADDRESS=0xcebA9300f2b948710d2653dD7B07f33A8B32118C \
+forge script script/DeployV3.s.sol \
+  --rpc-url $CELO_MAINNET_RPC \
+  --private-key $MAINNET_DEPLOYER_PRIVATE_KEY \
+  --broadcast --verify
+```
+
+After deploy on mainnet, call `allowToken(token, minAmount)` for each token via Safe multisig.
+
+### v2 Mainnet — chainid 42220 (legacy)
 
 ```bash
 source .env  # MAINNET_DEPLOYER_PRIVATE_KEY + MAINNET_{OWNER,TREASURY,RELAYER}_ADDRESS
