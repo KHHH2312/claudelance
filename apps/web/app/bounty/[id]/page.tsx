@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, User, Trophy, Clock, Coins, Shield, Layers, Github, Lock } from "lucide-react";
 import Link from "next/link";
-import { MAINNET } from "@yeheskieltame/claudelance-types";
+import { MAINNET_V3 } from "@yeheskieltame/claudelance-types";
 
 import { Header } from "@/components/header";
 import { BountyDetailClient } from "@/components/bounty-detail";
@@ -33,11 +33,10 @@ type BountyJson = {
   claimers: string[];
   submissions: Array<{
     worker: string;
-    prUrl: string;
+    deliverableUrl: string;
     ciPassed: boolean;
-    commitHash: string;
+    deliverableHash: string;
   }>;
-  total: number;
 };
 
 async function fetchBounty(id: string): Promise<BountyJson | null> {
@@ -298,7 +297,7 @@ function normalizeTokenSymbol(token: string) {
 
 function formatToken(raw: string, tokenAddress: string): string {
   const decimals =
-    tokenAddress.toLowerCase() === MAINNET.tokens.USDC.toLowerCase() ? 6 : 18;
+    tokenAddress.toLowerCase() === MAINNET_V3.tokens.USDC.toLowerCase() ? 6 : 18;
   try {
     return formatTokenAmount(BigInt(raw), decimals, 2);
   } catch {
