@@ -2,13 +2,16 @@
   "chainId": 42220,
   "v2": {
     "core": "0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423",
-    "deployedAt": 1778828074
+    "deployedAt": 1778828074,
+    "celoscan": "https://celoscan.io/address/0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423#code"
   },
   "v3": {
     "proxy": "0x68c83D75Ee95860E83A893Aa13556AdE8411e3c8",
     "implementation": "0x92b7d04E9A3fa3C96bfc891D8E8dB61Fe6C1D49C",
-    "deployedAt": 1780000000,
-    "note": "allowToken must be called via Safe multisig at 0xe9Fc48f315fD4E989637fAcC29AaF2717E19f7F0"
+    "deployedAt": 1780589936,
+    "tokensWhitelisted": true,
+    "celoscanProxy": "https://celoscan.io/address/0x68c83D75Ee95860E83A893Aa13556AdE8411e3c8#code",
+    "celoscanImpl": "https://celoscan.io/address/0x92b7d04E9A3fa3C96bfc891D8E8dB61Fe6C1D49C#code"
   },
   "tokens": {
     "cUSD": "0x765DE816845861e75A25fCA122bb6898B8B1282a",
