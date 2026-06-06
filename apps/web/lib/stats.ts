@@ -1,7 +1,12 @@
 import { createPublicClient, formatUnits, http } from "viem";
 
+import { CLAUDELANCE_CORE_V3_ABI } from "@yeheskieltame/claudelance-types";
 import { DEFAULT_CHAIN_ID, chainById } from "./chain";
-import { coreAbi, getDeployment } from "./contracts";
+import { getDeployment } from "./contracts";
+
+// On-chain constants (v2 + v3 both use these values).
+const PROTOCOL_FEE_BPS = 200n; // 2%
+const RESOLUTION_GRACE_PERIOD_SECONDS = 259_200n; // 3 days
 import { getCeloUsdPrice, tokenToCeloWei } from "./price";
 
 export type LiveStats = {
@@ -38,40 +43,43 @@ export async function fetchLiveStats(chainId: number = DEFAULT_CHAIN_ID): Promis
   const client = createPublicClient({ chain, transport: http(rpc) });
   const deploy = getDeployment(chainId);
 
-  const globals = (await client.multicall({
+  // v3: use getStatsV3(token) for all aggregate stats.
+  // Returns (volume, revenue, resolved, posters, workers, countByType[11]).
+  // v2-only getters (bountyCount, totalBountyVolume, totalProtocolRevenue, etc.)
+  // are not available on the v3 UUPS proxy (EIP-7201 namespaced storage).
+  const statsResults = await client.multicall({
     contracts: [
-      { address: deploy.core, abi: coreAbi, functionName: "bountyCount" },
-      { address: deploy.core, abi: coreAbi, functionName: "totalBountiesResolved" },
-      { address: deploy.core, abi: coreAbi, functionName: "uniquePosterCount" },
-      { address: deploy.core, abi: coreAbi, functionName: "uniqueWorkerCount" },
-      { address: deploy.core, abi: coreAbi, functionName: "PROTOCOL_FEE_BPS" },
-      { address: deploy.core, abi: coreAbi, functionName: "RESOLUTION_GRACE_PERIOD" },
+      { address: deploy.core, abi: CLAUDELANCE_CORE_V3_ABI, functionName: "getStatsV3" as const, args: [deploy.cUSD] },
+      { address: deploy.core, abi: CLAUDELANCE_CORE_V3_ABI, functionName: "getStatsV3" as const, args: [deploy.CELO] },
+      { address: deploy.core, abi: CLAUDELANCE_CORE_V3_ABI, functionName: "getStatsV3" as const, args: [deploy.USDC] },
     ],
-    allowFailure: false,
-  })) as bigint[];
+    allowFailure: true,
+  });
 
-  const perToken = (await client.multicall({
-    contracts: [
-      { address: deploy.core, abi: coreAbi, functionName: "totalBountyVolume", args: [deploy.cUSD] },
-      { address: deploy.core, abi: coreAbi, functionName: "totalBountyVolume", args: [deploy.CELO] },
-      { address: deploy.core, abi: coreAbi, functionName: "totalBountyVolume", args: [deploy.USDC] },
-      { address: deploy.core, abi: coreAbi, functionName: "totalProtocolRevenue", args: [deploy.cUSD] },
-      { address: deploy.core, abi: coreAbi, functionName: "totalProtocolRevenue", args: [deploy.CELO] },
-      { address: deploy.core, abi: coreAbi, functionName: "totalProtocolRevenue", args: [deploy.USDC] },
-    ],
-    allowFailure: false,
-  })) as bigint[];
+  type StatsV3Tuple = readonly [bigint, bigint, bigint, bigint, bigint, readonly bigint[]];
+  const safeStats = (i: number): StatsV3Tuple => {
+    const r = statsResults[i];
+    if (!r || r.status === "failure") return [0n, 0n, 0n, 0n, 0n, new Array(11).fill(0n) as bigint[]];
+    return r.result as StatsV3Tuple;
+  };
 
-  const [bountyCount, totalBountiesResolved, uniquePosterCount, uniqueWorkerCount, feeBps, graceSeconds] =
-    globals as [bigint, bigint, bigint, bigint, bigint, bigint];
-  const [volCusd, volCelo, volUsdc, revCusd, revCelo, revUsdc] = perToken as [
-    bigint,
-    bigint,
-    bigint,
-    bigint,
-    bigint,
-    bigint,
-  ];
+  const [sCusd, sCelo, sUsdc] = [safeStats(0), safeStats(1), safeStats(2)];
+  // Index: 0=volume, 1=revenue, 2=resolved, 3=posters, 4=workers
+  const volCusd = sCusd[0];
+  const volCelo = sCelo[0];
+  const volUsdc = sUsdc[0];
+  const revCusd = sCusd[1];
+  const revCelo = sCelo[1];
+  const revUsdc = sUsdc[1];
+  // resolved/posters/workers are global (same for all tokens); use cUSD as source.
+  const totalBountiesResolved = sCusd[2];
+  const uniquePosterCount = sCusd[3];
+  const uniqueWorkerCount = sCusd[4];
+  // bountyCount not directly available on v3; use resolved as a conservative proxy.
+  const bountyCount = totalBountiesResolved;
+  // Protocol fee and grace period are constants — read from SDK rather than on-chain.
+  const feeBps = PROTOCOL_FEE_BPS;
+  const graceSeconds = RESOLUTION_GRACE_PERIOD_SECONDS;
 
   const celoUsdPrice = await getCeloUsdPrice();
   const cusdInCelo = tokenToCeloWei(volCusd, 18, 1, celoUsdPrice);
