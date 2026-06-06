@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { Bounty } from "@yeheskieltame/claudelance-types";
-import { MAINNET, TASK_TYPE_NAMES, TASK_TYPE_LABELS } from "@yeheskieltame/claudelance-types";
+import { MAINNET_V3, TASK_TYPE_NAMES, TASK_TYPE_LABELS } from "@yeheskieltame/claudelance-types";
 
 import { cn } from "@/lib/utils";
 
@@ -17,25 +17,40 @@ export type BountyCardProps = {
   now?: number;
 };
 
+// Color classes per task type — repeating palette for types 0-10.
+const TASK_TYPE_CHIP_CLASS: Record<number, string> = {
+  0:  "border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-300",  // Code
+  1:  "border-blue-500/25 bg-blue-500/10 text-blue-700 dark:text-blue-300",          // Data
+  2:  "border-cyan-500/25 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",           // Research
+  3:  "border-pink-500/25 bg-pink-500/10 text-pink-700 dark:text-pink-300",           // Content
+  4:  "border-orange-500/25 bg-orange-500/10 text-orange-700 dark:text-orange-300",   // DocReview
+  5:  "border-red-500/25 bg-red-500/10 text-red-700 dark:text-red-300",               // CodeAudit
+  6:  "border-teal-500/25 bg-teal-500/10 text-teal-700 dark:text-teal-300",           // Translation
+  7:  "border-lime-500/25 bg-lime-500/10 text-lime-700 dark:text-lime-300",            // Education
+  8:  "border-slate-500/25 bg-slate-500/10 text-slate-700 dark:text-slate-300",        // Legal
+  9:  "border-yellow-500/25 bg-yellow-500/10 text-yellow-700 dark:text-yellow-300",    // Finance
+  10: "border-purple-500/25 bg-purple-500/10 text-purple-700 dark:text-purple-300",    // Custom
+};
+
 const tokenCatalog = [
   {
     symbol: "cUSD",
     decimals: 18,
-    addresses: [MAINNET.tokens.cUSD],
+    addresses: [MAINNET_V3.tokens.cUSD],
     chipClassName:
       "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
   },
   {
     symbol: "CELO",
     decimals: 18,
-    addresses: [MAINNET.tokens.CELO],
+    addresses: [MAINNET_V3.tokens.CELO],
     chipClassName:
       "border-amber-500/30 bg-amber-400/15 text-amber-700 dark:text-amber-200",
   },
   {
     symbol: "USDC",
     decimals: 6,
-    addresses: [MAINNET.tokens.USDC],
+    addresses: [MAINNET_V3.tokens.USDC],
     chipClassName:
       "border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-200",
   },
@@ -71,10 +86,10 @@ export function BountyCard({ bounty, className, href, now }: BountyCardProps) {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="mb-2 inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-primary">
-              {TASK_TYPE_LABELS[bounty.bountyType as keyof typeof TASK_TYPE_LABELS] ?? "UNKNOWN"}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <TaskTypeBadge bountyType={bounty.bountyType} />
+              <h3 className="line-clamp-1 text-base font-semibold leading-6">{title}</h3>
             </div>
-            <h3 className="line-clamp-1 text-base font-semibold leading-6">{title}</h3>
             <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">{description}</p>
           </div>
           <span className="shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold text-muted-foreground">
@@ -100,6 +115,18 @@ export function BountyCard({ bounty, className, href, now }: BountyCardProps) {
   );
 }
 
+/** Small colored chip showing the task type (Code, Research, etc.). */
+export function TaskTypeBadge({ bountyType }: { bountyType?: number }) {
+  const type = bountyType ?? 0;
+  const label = TASK_TYPE_LABELS[type as keyof typeof TASK_TYPE_LABELS] ?? `TYPE_${type}`;
+  const cls = TASK_TYPE_CHIP_CLASS[type] ?? TASK_TYPE_CHIP_CLASS[10];
+  return (
+    <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide shrink-0", cls)}>
+      {label}
+    </span>
+  );
+}
+
 export function getBountyTokenMeta(token: `0x${string}`): TokenMeta {
   const normalized = token.toLowerCase();
   return (
@@ -109,18 +136,38 @@ export function getBountyTokenMeta(token: `0x${string}`): TokenMeta {
 }
 
 export function getBountyTitle(bounty: Pick<Bounty, "targetRepoUrl" | "requirementsHash" | "bountyType">) {
-  if (bounty.bountyType === 0) {
+  const type = bounty.bountyType ?? 0;
+  if (type === 0) {
+    // Code bounties: show repo name for familiarity.
     const repoName = formatRepoName(bounty.targetRepoUrl);
-    return repoName ? `${repoName} bounty` : `Bounty ${shortHash(bounty.requirementsHash)}`;
+    return repoName ? `${repoName}` : `Bounty ${shortHash(bounty.requirementsHash)}`;
   }
-  const typeName = TASK_TYPE_NAMES[bounty.bountyType as keyof typeof TASK_TYPE_NAMES] ?? "Task";
-  return `${typeName} ${shortHash(bounty.requirementsHash)}`;
+  // Other task types: use task type name + short spec identifier.
+  const typeName = TASK_TYPE_NAMES[type as keyof typeof TASK_TYPE_NAMES] ?? "Task";
+  const specSource = formatHost(bounty.targetRepoUrl);
+  return specSource ? `${typeName}: ${specSource}` : `${typeName} ${shortHash(bounty.requirementsHash)}`;
+}
+
+export function getBountyDescription(bounty: Pick<Bounty, "instructionUrl" | "requirementsHash" | "ciRequired" | "bountyType">) {
+  const type = bounty.bountyType ?? 0;
+  if (type === 0) {
+    // Code bounties: show repo name for familiarity.
+    const repoName = formatRepoName(bounty.targetRepoUrl);
+    return repoName ? `${repoName}` : `Bounty ${shortHash(bounty.requirementsHash)}`;
+  }
+  // Other task types: use task type name + short spec identifier.
+  const typeName = TASK_TYPE_NAMES[type as keyof typeof TASK_TYPE_NAMES] ?? "Task";
+  const specSource = formatHost(bounty.targetRepoUrl);
+  return specSource ? `${typeName}: ${specSource}` : `${typeName} ${shortHash(bounty.requirementsHash)}`;
 }
 
 export function getBountyDescription(bounty: Pick<Bounty, "instructionUrl" | "requirementsHash" | "ciRequired" | "bountyType">) {
   const source = formatHost(bounty.instructionUrl);
-  const verification = bounty.bountyType === 0 && bounty.ciRequired ? "CI required" : "Manual review";
-  return `${verification} for requirements ${shortHash(bounty.requirementsHash)}${source ? ` from ${source}` : ""}.`;
+  const review = bounty.ciRequired ? "CI-gated" : "Manual review";
+  if (type === 0 || type === 5) {
+    return `${review} · spec ${shortHash(bounty.requirementsHash)}${source ? ` · ${source}` : ""}`;
+  }
+  return `${source ? `Spec: ${source}` : shortHash(bounty.requirementsHash)} · Manual review`;
 }
 
 export function formatDeadlineCountdown(deadline: bigint, now = Math.floor(Date.now() / 1000)) {

@@ -3,7 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CLAUDELANCE_CORE_V3_ABI, MAINNET_V3, TASK_TYPE_NAMES } from "@yeheskieltame/claudelance-types";
+import {
+  CLAUDELANCE_CORE_V3_ABI,
+  MAINNET_V3,
+  TASK_TYPE_NAMES,
+} from "@yeheskieltame/claudelance-types";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -48,8 +52,14 @@ type TokenSymbol = "cUSD" | "CELO" | "USDC";
 type PendingAction = "approve" | "post";
 type HireMode = "open" | "direct";
 
-// Mirrors on-chain minBounty(token) on mainnet core 0x1362d8…E423.
+// Mirrors on-chain minBounty(token) on v3 mainnet proxy.
 const TOKEN_MIN: Record<TokenSymbol, string> = { cUSD: "0.5", CELO: "1", USDC: "0.5" };
+
+// Task type options from the v3 contract (types 0–10).
+const TASK_TYPE_OPTIONS = Object.entries(TASK_TYPE_NAMES).map(([id, name]) => ({
+  id: Number(id),
+  name: name as string,
+}));
 
 type FormState = {
   hireMode: HireMode;
@@ -59,6 +69,8 @@ type FormState = {
   // claim time.
   targetWorker: string;
   token: TokenSymbol;
+  /** v3 task type (0 = Code, 1 = DataAnalysis, …, 10 = Custom). */
+  bountyType: number;
   amount: string;
   repoUrl: string;
   issueUrl: string;
@@ -128,8 +140,12 @@ const tokenStepSchema = tokenStepObject.refine(
 );
 
 const linksStepSchema = z.object({
-  repoUrl: z.string().url("Enter a valid URL for the spec/repo."),
-  issueUrl: z.string().url("Enter a valid URL for the issue/discussion."),
+  bountyType: z.number().int().min(0).max(10),
+  // repoUrl = "Spec URL": for code bounties this should be a GitHub repo; for other
+  // types it can be any verifiable URL (Gist, IPFS, Arweave, GitHub repo, etc.).
+  repoUrl: z.string().url("Enter a valid URL for the target repo or spec location."),
+  // issueUrl = "Instruction URL": full spec / brief for the task.
+  issueUrl: z.string().url("Enter a valid instruction URL (GitHub issue, Gist, or any spec URL)."),
 });
 
 const rulesStepSchema = z.object({
@@ -158,6 +174,7 @@ const initialState: FormState = {
   hireMode: "open",
   targetWorker: "",
   token: "CELO",
+  bountyType: 0,
   amount: "1",
   repoUrl: "",
   issueUrl: "",
@@ -391,7 +408,8 @@ function PostBountyForm() {
               Number(values.maxSlots),
               parsed.stake,
               parsed.deadlineSeconds,
-              values.ciRequired,
+              // CI is only supported for Code (0) and CodeAudit (5) by default.
+              values.ciRequired && (values.bountyType === 0 || values.bountyType === 5),
             ],
             chainId: writeChainId,
             feeCurrency: miniPayFeeCurrency(),
@@ -662,6 +680,35 @@ function TokenStep({
   );
 }
 
+// Placeholder hints per task type for the spec URL field.
+const SPEC_URL_HINT: Record<number, string> = {
+  0:  "https://github.com/owner/repo",
+  1:  "https://github.com/owner/repo (data source)",
+  2:  "https://github.com/owner/repo or IPFS/Arweave URL",
+  3:  "https://github.com/owner/repo or Gist URL",
+  4:  "https://github.com/owner/repo (doc to review)",
+  5:  "https://github.com/owner/repo (code to audit)",
+  6:  "https://github.com/owner/repo or source URL",
+  7:  "https://github.com/owner/repo or course URL",
+  8:  "https://github.com/owner/repo or case source",
+  9:  "https://github.com/owner/repo or data source",
+  10: "https://... (any verifiable URL)",
+};
+
+const INSTRUCTION_URL_HINT: Record<number, string> = {
+  0:  "https://github.com/owner/repo/issues/123",
+  1:  "https://github.com/owner/repo/issues/123 or Gist",
+  2:  "https://github.com/owner/repo/issues/123 or brief doc URL",
+  3:  "https://github.com/owner/repo/issues/123 or content brief",
+  4:  "https://github.com/owner/repo/issues/123 or doc URL",
+  5:  "https://github.com/owner/repo/issues/123 or audit scope",
+  6:  "https://github.com/owner/repo/issues/123 or translation brief",
+  7:  "https://github.com/owner/repo/issues/123 or curriculum spec",
+  8:  "https://github.com/owner/repo/issues/123 or case brief",
+  9:  "https://github.com/owner/repo/issues/123 or analysis scope",
+  10: "https://... (spec for the custom task)",
+};
+
 function LinksStep({
   values,
   errors,
@@ -712,6 +759,44 @@ function LinksStep({
           />
           <p className="mt-1 text-xs text-muted-foreground">{issueHint}</p>
         </div>
+=======
+  return (
+    <div>
+      <StepHeading
+        title="Task type and links"
+        description="Select the task type and attach the spec and instruction URLs."
+      />
+      <div className="mt-6">
+        <label className="block text-sm font-medium text-foreground">Task type</label>
+        <select
+          value={values.bountyType}
+          onChange={(e) => onChange("bountyType", Number(e.target.value))}
+          className="mt-1.5 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          {TASK_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.id} — {opt.name}
+            </option>
+          ))}
+        </select>
+        {errors.bountyType && <p className="mt-1 text-xs text-destructive">{errors.bountyType}</p>}
+      </div>
+      <div className="mt-5 grid gap-5">
+        <LabelledInput
+          label={isCode ? "Repository URL" : "Spec URL"}
+          value={values.repoUrl}
+          error={errors.repoUrl}
+          placeholder={SPEC_URL_HINT[values.bountyType] ?? "https://..."}
+          onChange={(value) => onChange("repoUrl", value)}
+        />
+        <LabelledInput
+          label={isCode ? "Issue URL" : "Instruction URL"}
+          value={values.issueUrl}
+          error={errors.issueUrl}
+          placeholder={INSTRUCTION_URL_HINT[values.bountyType] ?? "https://..."}
+          onChange={(value) => onChange("issueUrl", value)}
+        />
+>>>>>>> origin/main
       </div>
     </div>
   );
@@ -732,6 +817,7 @@ function RulesStep({
   targetHasIdentity?: boolean;
   targetAgentId?: bigint;
 }) {
+  const ciSupported = values.bountyType === 0 || values.bountyType === 5;
   return (
     <div>
       <StepHeading
@@ -780,7 +866,7 @@ function RulesStep({
           placeholder=""
           onChange={(value) => onChange("deadline", value)}
         />
-        {!isDirect && (
+        {!isDirect && ciSupported && (
           <label className="flex min-h-20 items-center gap-3 rounded-xl border bg-background px-4 py-3">
             <input
               type="checkbox"
@@ -790,7 +876,7 @@ function RulesStep({
             />
             <span>
               <span className="block text-sm font-medium">Require CI</span>
-              <span className="text-xs text-muted-foreground">Mark the bounty as CI-gated.</span>
+              <span className="text-xs text-muted-foreground">Mark the bounty as CI-gated (Code / Code Audit only).</span>
             </span>
           </label>
         )}
