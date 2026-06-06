@@ -11,15 +11,11 @@ import {
 import Link from "next/link";
 import { CheckCircle2, ExternalLink, Loader2, Lock, ShieldCheck, Upload } from "lucide-react";
 import {
-<<<<<<< HEAD
   CLAUDELANCE_CORE_ABI,
   CLAUDELANCE_CORE_V3_ABI,
   MAINNET,
   MAINNET_V3,
-=======
-  CLAUDELANCE_CORE_V3_ABI,
   TASK_TYPE_NAMES,
->>>>>>> origin/main
   deploymentByChainId,
 } from "@yeheskieltame/claudelance-types";
 import type { Address, Hash } from "viem";
@@ -82,7 +78,6 @@ type BountyJson = {
   targetRepoUrl?: string;
   claimers: string[];
   submissions: Submission[];
-  bountyType: number;
 };
 
 export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
@@ -191,15 +186,11 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
         <PickWinnerCard bountyId={bounty.id} submissions={bounty.submissions} />
       )}
 
-<<<<<<< HEAD
+
       {/* Claimer: submit Deliverable */}
       {isClaimer && isOpen && !hasSubmission && (
         <SubmitDeliverableCard bountyId={bounty.id} bountyType={bounty.bountyType} />
-=======
-      {/* Claimer: submit deliverable */}
-      {isClaimer && isOpen && !hasSubmission && (
-        <SubmitDeliverableCard bountyId={bounty.id} bountyType={bounty.bountyType ?? 0} />
->>>>>>> origin/main
+
       )}
 
       {/* Worker: claim slot — open bounties, or direct hires only for the targeted worker */}
@@ -376,9 +367,6 @@ function PickWinnerCard({
   );
 }
 
-<<<<<<< HEAD
-function SubmitDeliverableCard({ bountyId, bountyType }: { bountyId: string, bountyType: number }) {
-=======
 // Per-type placeholder hints for the deliverable URL.
 const DELIVERABLE_URL_HINT: Record<number, string> = {
   0:  "https://github.com/owner/repo/pull/123",
@@ -395,7 +383,23 @@ const DELIVERABLE_URL_HINT: Record<number, string> = {
 };
 
 function SubmitDeliverableCard({ bountyId, bountyType = 0 }: { bountyId: string; bountyType?: number }) {
->>>>>>> origin/main
+  const getHint = () => {
+    switch (bountyType) {
+      case 0: return "PR link";
+      case 1:
+      case 2: return "IPFS/Arweave";
+      default: return "URL";
+    }
+  };
+
+  const getUrlPlaceholder = () => {
+    switch (bountyType) {
+      case 0: return "https://github.com/owner/repo/pull/123";
+      case 1:
+      case 2: return "ipfs://... or ar://...";
+      default: return "https://...";
+    }
+  };
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
   const [txHash, setTxHash] = React.useState<Hash | null>(null);
@@ -424,13 +428,11 @@ function SubmitDeliverableCard({ bountyId, bountyType = 0 }: { bountyId: string;
   };
 
   const typeName = TASK_TYPE_NAMES[bountyType as keyof typeof TASK_TYPE_NAMES] ?? "Task";
->>>>>>> origin/main
 
   const submit = async () => {
     if (!canSubmit) return;
+    const formattedHash = normalizeHash(contentHash);
     try {
-      const padded = deliverableHash.toLowerCase().padEnd(64, '0');
-      const formattedHash = `0x${padded.slice(0, 64)}` as Hash;
       const hash = (await writeContractAsync({
         address: core,
         abi: CLAUDELANCE_CORE_V3_ABI,
@@ -472,34 +474,11 @@ function SubmitDeliverableCard({ bountyId, bountyType = 0 }: { bountyId: string;
               <input
                 type="text"
                 placeholder="Content Hash (hex)"
-                value={deliverableHash}
-                onChange={(e) => setDeliverableHash(e.target.value.replace(/^0x/, "").trim())}
+                value={contentHash}
+                onChange={(e) => setContentHash(e.target.value.replace(/^0x/, "").trim())}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
-=======
-          <h3 className="font-semibold">Submit your {typeName} deliverable</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            You&apos;ve claimed this bounty. Paste the deliverable URL and its
-            content hash (commit SHA or keccak256) to complete your entry.
-          </p>
-          <div className="mt-4 space-y-3">
-            <input
-              type="url"
-              placeholder={DELIVERABLE_URL_HINT[bountyType] ?? "https://..."}
-              value={deliverableUrl}
-              onChange={(e) => setDeliverableUrl(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <input
-              type="text"
-              placeholder="Commit SHA (40 hex) or keccak256 (64 hex)"
-              value={contentHash}
-              onChange={(e) => setContentHash(e.target.value.trim())}
-              maxLength={66}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
->>>>>>> origin/main
             <Button size="sm" onClick={submit} disabled={!canSubmit || isPending}>
               {isPending ? (
                 <>
@@ -633,9 +612,7 @@ function WithdrawEarningsCard({ token }: { token: string }) {
   );
 }
 
-// Import MAINNET_V3 for tokenMeta lookup (v3 same token addresses as v2 mainnet)
-import { MAINNET_V3 } from "@yeheskieltame/claudelance-types";
-
+// Use MAINNET_V3 for tokenMeta lookup (v3 same token addresses as v2 mainnet)
 function tokenMeta(tokenAddress: string): { symbol: string; decimals: number } {
   const addr = tokenAddress.toLowerCase();
   if (addr === MAINNET_V3.tokens.USDC.toLowerCase()) return { symbol: "USDC", decimals: 6 };

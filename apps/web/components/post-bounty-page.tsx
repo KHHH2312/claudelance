@@ -78,10 +78,7 @@ type FormState = {
   maxSlots: string;
   deadline: string;
   ciRequired: boolean;
-  bountyType: number;
-};
-
-const queryClient = new QueryClient();
+};const queryClient = new QueryClient();
 
 const wagmiConfig = createConfig({
   chains: supportedChains,
@@ -182,7 +179,6 @@ const initialState: FormState = {
   maxSlots: "3",
   deadline: defaultDeadline(),
   ciRequired: true,
-  bountyType: 0,
 };
 
 export function PostBountyPage() {
@@ -725,43 +721,6 @@ function LinksStep({
 
   return (
     <div>
-      <StepHeading title="Task details & Links" description="Select the task type and attach the requirements." />
-      <div className="mt-6 grid gap-5">
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Task Type</label>
-          <select
-            value={values.bountyType}
-            onChange={(e) => onChange("bountyType", Number(e.target.value))}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {Object.entries(TASK_TYPE_NAMES).map(([val, name]) => (
-              <option key={val} value={val}>{name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <LabelledInput
-            label="Spec URL"
-            value={values.repoUrl}
-            error={errors.repoUrl}
-            placeholder={isCode ? "https://github.com/owner/repo" : "https://..."}
-            onChange={(value) => onChange("repoUrl", value)}
-          />
-          <p className="mt-1 text-xs text-muted-foreground">{specHint}</p>
-        </div>
-        <div>
-          <LabelledInput
-            label="Issue URL"
-            value={values.issueUrl}
-            error={errors.issueUrl}
-            placeholder={isCode ? "https://github.com/owner/repo/issues/123" : "https://..."}
-            onChange={(value) => onChange("issueUrl", value)}
-          />
-          <p className="mt-1 text-xs text-muted-foreground">{issueHint}</p>
-        </div>
-=======
-  return (
-    <div>
       <StepHeading
         title="Task type and links"
         description="Select the task type and attach the spec and instruction URLs."
@@ -796,7 +755,7 @@ function LinksStep({
           placeholder={INSTRUCTION_URL_HINT[values.bountyType] ?? "https://..."}
           onChange={(value) => onChange("issueUrl", value)}
         />
->>>>>>> origin/main
+
       </div>
     </div>
   );

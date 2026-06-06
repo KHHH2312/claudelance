@@ -33,9 +33,9 @@ type BountyJson = {
   claimers: string[];
   submissions: Array<{
     worker: string;
-    prUrl: string;
+    deliverableUrl: string;
     ciPassed: boolean;
-    commitHash: string;
+    deliverableHash: string;
   }>;
   total: number;
 };

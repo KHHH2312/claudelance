@@ -149,20 +149,8 @@ export function getBountyTitle(bounty: Pick<Bounty, "targetRepoUrl" | "requireme
 }
 
 export function getBountyDescription(bounty: Pick<Bounty, "instructionUrl" | "requirementsHash" | "ciRequired" | "bountyType">) {
-  const type = bounty.bountyType ?? 0;
-  if (type === 0) {
-    // Code bounties: show repo name for familiarity.
-    const repoName = formatRepoName(bounty.targetRepoUrl);
-    return repoName ? `${repoName}` : `Bounty ${shortHash(bounty.requirementsHash)}`;
-  }
-  // Other task types: use task type name + short spec identifier.
-  const typeName = TASK_TYPE_NAMES[type as keyof typeof TASK_TYPE_NAMES] ?? "Task";
-  const specSource = formatHost(bounty.targetRepoUrl);
-  return specSource ? `${typeName}: ${specSource}` : `${typeName} ${shortHash(bounty.requirementsHash)}`;
-}
-
-export function getBountyDescription(bounty: Pick<Bounty, "instructionUrl" | "requirementsHash" | "ciRequired" | "bountyType">) {
   const source = formatHost(bounty.instructionUrl);
+  const type = bounty.bountyType ?? 0;
   const review = bounty.ciRequired ? "CI-gated" : "Manual review";
   if (type === 0 || type === 5) {
     return `${review} · spec ${shortHash(bounty.requirementsHash)}${source ? ` · ${source}` : ""}`;
