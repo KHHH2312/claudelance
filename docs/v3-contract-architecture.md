@@ -2,9 +2,16 @@
 
 ## Status
 
-v2 is LIVE and immutable at `0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423` (Celo Mainnet).
-v3 will deploy as a new UUPS upgradeable proxy, independent of v2. v2 continues to
-serve existing bounties; v3 is the target for all new task types.
+**v2** — immutable at `0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423` (Celo Mainnet). Serves existing code bounties.
+
+**v3 — LIVE (2026-06-04)**
+
+| Network | Proxy | Implementation |
+|---------|-------|----------------|
+| Celo Mainnet (42220) | `0x68c83D75Ee95860E83A893Aa13556AdE8411e3c8` | `0x92b7d04E9A3fa3C96bfc891D8E8dB61Fe6C1D49C` |
+| Celo Sepolia (11142220) | `0x64b45Fe2C64951013389740AD530e5c664fd0Ffe` | `0x1fb667a40159e4652A89dDFC9ADF3eEcB6F0A572` |
+
+Both Celoscan-verified. cUSD / CELO / USDC whitelisted on both networks. 144 tests pass (23 unit + 38 fork against live Sepolia + 79 v2 regression).
 
 ---
 
@@ -227,8 +234,8 @@ v2 is NOT migrated. It runs in parallel:
 
 | Contract | Purpose | Status |
 |----------|---------|--------|
-| v2 `0x1362d8…E423` | Code bounties (type 0), existing state | Permanent, immutable |
-| v3 (new address TBD) | All types 0–10, upgradeable | Deploy after Sepolia validation |
+| v2 `0x1362d874F40B7e28836cBeCcA14f5EfBe6c6E423` | Code bounties (type 0), existing state | Permanent, immutable |
+| v3 proxy `0x68c83D75Ee95860E83A893Aa13556AdE8411e3c8` | All types 0–10, upgradeable | **LIVE 2026-06-04** |
 
 Frontend connects to both — `/bounties` feed queries both contracts and merges results.
 SDK adds `network: "v3"` option alongside existing `"celo"` / `"sepolia"`.
@@ -269,10 +276,12 @@ Target: 120+ tests before mainnet v3 deploy.
 
 ## Timeline
 
-| Milestone | Target |
+| Milestone | Status |
 |-----------|--------|
-| Sepolia v3 deploy + basic types (0, 1, 2, 3) | Week 1 post-hackathon |
-| Full 10-type support + disclaimer enforcement | Week 2 |
-| Frontend v3 pages (/post-v3, /bounties?v=3) | Week 3 |
-| Mainnet v3 deploy (Safe multisig) | Week 4 |
-| SDK v3 support (`@yeheskieltame/claudelance-sdk@1.0.0`) | Week 4 |
+| Sepolia v3 deploy (all 10 types, EIP-7201) | **DONE — 2026-06-04** |
+| 144 tests pass (23 unit + 38 fork + 79 regression) | **DONE** |
+| Security review cleared (no Critical/High/Medium) | **DONE** |
+| Mainnet v3 deploy via deployer key | **DONE — 2026-06-04** |
+| allowToken cUSD/CELO/USDC via Safe multisig | **DONE — 2026-06-06** |
+| Frontend v3 pages (/post-v3, /bounties?v=3) | Pending |
+| SDK v3 support (`@yeheskieltame/claudelance-sdk@1.0.0`) | Pending |
