@@ -282,6 +282,6 @@ Target: 120+ tests before mainnet v3 deploy.
 | 144 tests pass (23 unit + 38 fork + 79 regression) | **DONE** |
 | Security review cleared (no Critical/High/Medium) | **DONE** |
 | Mainnet v3 deploy via deployer key | **DONE — 2026-06-04** |
-| allowToken cUSD/CELO/USDC via Safe multisig | **DONE — 2026-06-06** |
+| allowToken cUSD/CELO/USDC via Safe multisig | **DONE — 2026-06-06** (Safe exec confirmed) |
 | Frontend v3 pages (/post-v3, /bounties?v=3) | Pending |
 | SDK v3 support (`@yeheskieltame/claudelance-sdk@1.0.0`) | Pending |
