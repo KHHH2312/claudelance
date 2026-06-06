@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
 import { createPublicClient, http, type Address } from "viem";
-import { MAINNET, type Deployment } from "@yeheskieltame/claudelance-types";
+import { MAINNET_V3, type Deployment } from "@yeheskieltame/claudelance-types";
 
 import { celoMainnet } from "@/lib/chain";
 
 export const revalidate = 30;
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 const detailAbi = [
-  {
-    type: "function",
-    name: "bountyCount",
-    inputs: [],
-    outputs: [{ type: "uint256" }],
-    stateMutability: "view",
-  },
   {
     type: "function",
     name: "getBounty",
@@ -60,11 +55,11 @@ const detailAbi = [
       {
         type: "tuple",
         components: [
-          { name: "commitHash", type: "bytes32" },
+          { name: "deliverableHash", type: "bytes32" },
           { name: "submittedAt", type: "uint64" },
           { name: "ciPassed", type: "bool" },
-          { name: "stakeRefunded", type: "bool" },
-          { name: "prUrl", type: "string" },
+          { name: "stakeSettled", type: "bool" },
+          { name: "deliverableUrl", type: "string" },
           { name: "metadata", type: "string" },
         ],
       },
@@ -101,11 +96,11 @@ type ChainBounty = {
 };
 
 type ChainSubmission = {
-  commitHash: `0x${string}`;
+  deliverableHash: `0x${string}`;
   submittedAt: bigint;
   ciPassed: boolean;
-  stakeRefunded: boolean;
-  prUrl: string;
+  stakeSettled: boolean;
+  deliverableUrl: string;
   metadata: string;
 };
 
@@ -126,16 +121,6 @@ export async function GET(_request: Request, { params }: { params: Params }) {
     transport: http(getRpcOverride(deployment.chainId)),
   });
 
-  const totalCount = await client.readContract({
-    address: deployment.core,
-    abi: detailAbi,
-    functionName: "bountyCount",
-  });
-
-  if (bountyId > totalCount) {
-    return NextResponse.json({ error: "bounty not found" }, { status: 404, headers: corsHeaders });
-  }
-
   const [bountyResult, claimersResult] = await client.multicall({
     allowFailure: false,
     contracts: [
@@ -155,6 +140,10 @@ export async function GET(_request: Request, { params }: { params: Params }) {
   });
 
   const bounty = normalizeBounty(bountyResult);
+  // v3: getBounty returns zero struct for non-existent ids (no bountyCount getter).
+  if (bounty.poster === ZERO_ADDRESS) {
+    return NextResponse.json({ error: "bounty not found" }, { status: 404, headers: corsHeaders });
+  }
   const claimers = claimersResult as Address[];
   const submissionResults =
     claimers.length === 0
@@ -183,7 +172,6 @@ export async function GET(_request: Request, { params }: { params: Params }) {
       ...toJsonBounty(bountyId, bounty),
       claimers,
       submissions,
-      total: Number(totalCount),
     },
     { headers: corsHeaders },
   );
@@ -199,7 +187,7 @@ function parseBountyId(value: string) {
 }
 
 function getActiveDeployment(): Deployment {
-  return MAINNET;
+  return MAINNET_V3;
 }
 
 function getRpcOverride(_chainId: number) {
@@ -230,11 +218,11 @@ function toJsonBounty(id: bigint, bounty: ChainBounty) {
 function toJsonSubmission(worker: Address, submission: ChainSubmission) {
   return {
     worker,
-    commitHash: submission.commitHash,
+    deliverableHash: submission.deliverableHash,
     submittedAt: submission.submittedAt.toString(),
     ciPassed: submission.ciPassed,
-    stakeRefunded: submission.stakeRefunded,
-    prUrl: submission.prUrl,
+    stakeSettled: submission.stakeSettled,
+    deliverableUrl: submission.deliverableUrl,
     metadata: submission.metadata,
   };
 }
@@ -266,11 +254,11 @@ function normalizeBounty(result: unknown): ChainBounty {
 function normalizeSubmission(result: unknown): ChainSubmission {
   if (Array.isArray(result)) {
     return {
-      commitHash: result[0] as `0x${string}`,
+      deliverableHash: result[0] as `0x${string}`,
       submittedAt: result[1] as bigint,
       ciPassed: Boolean(result[2]),
-      stakeRefunded: Boolean(result[3]),
-      prUrl: String(result[4]),
+      stakeSettled: Boolean(result[3]),
+      deliverableUrl: String(result[4]),
       metadata: String(result[5]),
     };
   }
