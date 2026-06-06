@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { Bounty } from "@yeheskieltame/claudelance-types";
-import { MAINNET } from "@yeheskieltame/claudelance-types";
+import { MAINNET, TASK_TYPE_NAMES, TASK_TYPE_LABELS } from "@yeheskieltame/claudelance-types";
 
 import { cn } from "@/lib/utils";
 
@@ -71,6 +71,9 @@ export function BountyCard({ bounty, className, href, now }: BountyCardProps) {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
+            <div className="mb-2 inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider text-primary">
+              {TASK_TYPE_LABELS[bounty.bountyType as keyof typeof TASK_TYPE_LABELS] ?? "UNKNOWN"}
+            </div>
             <h3 className="line-clamp-1 text-base font-semibold leading-6">{title}</h3>
             <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">{description}</p>
           </div>
@@ -105,15 +108,19 @@ export function getBountyTokenMeta(token: `0x${string}`): TokenMeta {
   );
 }
 
-export function getBountyTitle(bounty: Pick<Bounty, "targetRepoUrl" | "requirementsHash">) {
-  const repoName = formatRepoName(bounty.targetRepoUrl);
-  return repoName ? `${repoName} bounty` : `Bounty ${shortHash(bounty.requirementsHash)}`;
+export function getBountyTitle(bounty: Pick<Bounty, "targetRepoUrl" | "requirementsHash" | "bountyType">) {
+  if (bounty.bountyType === 0) {
+    const repoName = formatRepoName(bounty.targetRepoUrl);
+    return repoName ? `${repoName} bounty` : `Bounty ${shortHash(bounty.requirementsHash)}`;
+  }
+  const typeName = TASK_TYPE_NAMES[bounty.bountyType as keyof typeof TASK_TYPE_NAMES] ?? "Task";
+  return `${typeName} ${shortHash(bounty.requirementsHash)}`;
 }
 
-export function getBountyDescription(bounty: Pick<Bounty, "instructionUrl" | "requirementsHash" | "ciRequired">) {
+export function getBountyDescription(bounty: Pick<Bounty, "instructionUrl" | "requirementsHash" | "ciRequired" | "bountyType">) {
   const source = formatHost(bounty.instructionUrl);
-  const ci = bounty.ciRequired ? "CI required" : "Manual review";
-  return `${ci} for requirements ${shortHash(bounty.requirementsHash)}${source ? ` from ${source}` : ""}.`;
+  const verification = bounty.bountyType === 0 && bounty.ciRequired ? "CI required" : "Manual review";
+  return `${verification} for requirements ${shortHash(bounty.requirementsHash)}${source ? ` from ${source}` : ""}.`;
 }
 
 export function formatDeadlineCountdown(deadline: bigint, now = Math.floor(Date.now() / 1000)) {

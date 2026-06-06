@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CLAUDELANCE_CORE_ABI, MAINNET } from "@yeheskieltame/claudelance-types";
+import { CLAUDELANCE_CORE_V3_ABI, MAINNET_V3, TASK_TYPE_NAMES } from "@yeheskieltame/claudelance-types";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -66,6 +66,7 @@ type FormState = {
   maxSlots: string;
   deadline: string;
   ciRequired: boolean;
+  bountyType: number;
 };
 
 const queryClient = new QueryClient();
@@ -127,14 +128,8 @@ const tokenStepSchema = tokenStepObject.refine(
 );
 
 const linksStepSchema = z.object({
-  repoUrl: z
-    .string()
-    .url("Enter a repository URL.")
-    .refine((value) => /^https:\/\/github\.com\/[^/]+\/[^/]+\/?$/i.test(value), "Use a GitHub repository URL."),
-  issueUrl: z
-    .string()
-    .url("Enter an issue URL.")
-    .refine((value) => /^https:\/\/github\.com\/[^/]+\/[^/]+\/issues\/\d+\/?$/i.test(value), "Use a GitHub issue URL."),
+  repoUrl: z.string().url("Enter a valid URL for the spec/repo."),
+  issueUrl: z.string().url("Enter a valid URL for the issue/discussion."),
 });
 
 const rulesStepSchema = z.object({
@@ -170,6 +165,7 @@ const initialState: FormState = {
   maxSlots: "3",
   deadline: defaultDeadline(),
   ciRequired: true,
+  bountyType: 0,
 };
 
 export function PostBountyPage() {
@@ -183,7 +179,7 @@ export function PostBountyPage() {
 }
 
 function PostBountyForm() {
-  const deployment = MAINNET;
+  const deployment = MAINNET_V3;
   const writeChainId = celoMainnet.id;
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending: isConnecting } = useConnect();
@@ -365,12 +361,12 @@ function PostBountyForm() {
       const hash = isDirect
         ? await writeContractAsync({
             address: deployment.core,
-            abi: CLAUDELANCE_CORE_ABI,
+            abi: CLAUDELANCE_CORE_V3_ABI,
             functionName: "postDirectHire",
             args: [
               token.address,
               getAddress(targetTrimmed),
-              0,
+              values.bountyType,
               repo,
               issue,
               parsed.requirementsHash,
@@ -383,11 +379,11 @@ function PostBountyForm() {
           })
         : await writeContractAsync({
             address: deployment.core,
-            abi: CLAUDELANCE_CORE_ABI,
+            abi: CLAUDELANCE_CORE_V3_ABI,
             functionName: "postBounty",
             args: [
               token.address,
-              0,
+              values.bountyType,
               repo,
               issue,
               parsed.requirementsHash,
@@ -675,24 +671,47 @@ function LinksStep({
   errors: Record<string, string>;
   onChange: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
 }) {
+  const isCode = values.bountyType === 0;
+  const isResearch = values.bountyType === 1 || values.bountyType === 2;
+  const specHint = isCode ? "e.g., https://github.com/owner/repo" : (isResearch ? "IPFS/Arweave URL for report or data" : "Link to the spec");
+  const issueHint = "Detailed issue URL or discussion thread";
+
   return (
     <div>
-      <StepHeading title="Repository links" description="Attach the target repository and issue instructions." />
+      <StepHeading title="Task details & Links" description="Select the task type and attach the requirements." />
       <div className="mt-6 grid gap-5">
-        <LabelledInput
-          label="Repository URL"
-          value={values.repoUrl}
-          error={errors.repoUrl}
-          placeholder="https://github.com/owner/repo"
-          onChange={(value) => onChange("repoUrl", value)}
-        />
-        <LabelledInput
-          label="Issue URL"
-          value={values.issueUrl}
-          error={errors.issueUrl}
-          placeholder="https://github.com/owner/repo/issues/123"
-          onChange={(value) => onChange("issueUrl", value)}
-        />
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Task Type</label>
+          <select
+            value={values.bountyType}
+            onChange={(e) => onChange("bountyType", Number(e.target.value))}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {Object.entries(TASK_TYPE_NAMES).map(([val, name]) => (
+              <option key={val} value={val}>{name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <LabelledInput
+            label="Spec URL"
+            value={values.repoUrl}
+            error={errors.repoUrl}
+            placeholder={isCode ? "https://github.com/owner/repo" : "https://..."}
+            onChange={(value) => onChange("repoUrl", value)}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">{specHint}</p>
+        </div>
+        <div>
+          <LabelledInput
+            label="Issue URL"
+            value={values.issueUrl}
+            error={errors.issueUrl}
+            placeholder={isCode ? "https://github.com/owner/repo/issues/123" : "https://..."}
+            onChange={(value) => onChange("issueUrl", value)}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">{issueHint}</p>
+        </div>
       </div>
     </div>
   );
@@ -1192,7 +1211,7 @@ function flattenZodErrors(result: z.SafeParseReturnType<unknown, unknown>) {
   }, {});
 }
 
-function parseForm(values: FormState, deployment: typeof MAINNET) {
+function parseForm(values: FormState, deployment: typeof MAINNET_V3) {
   try {
     const token = tokenConfig(values.token, deployment);
     const amount = parseUnits(values.amount, token.decimals);
@@ -1212,13 +1231,13 @@ function parseForm(values: FormState, deployment: typeof MAINNET) {
       ),
     );
 
-    return { amount, stake, deadlineSeconds, requirementsHash };
+    return { token, amount, stake, deadlineSeconds, requirementsHash };
   } catch {
     return null;
   }
 }
 
-function tokenConfig(symbol: TokenSymbol, deployment: typeof MAINNET) {
+function tokenConfig(symbol: TokenSymbol, deployment: typeof MAINNET_V3) {
   const address = deployment.tokens[symbol] as Address;
   return {
     address,

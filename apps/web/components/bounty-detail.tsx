@@ -12,7 +12,9 @@ import Link from "next/link";
 import { CheckCircle2, ExternalLink, Loader2, Lock, ShieldCheck, Upload } from "lucide-react";
 import {
   CLAUDELANCE_CORE_ABI,
+  CLAUDELANCE_CORE_V3_ABI,
   MAINNET,
+  MAINNET_V3,
   deploymentByChainId,
 } from "@yeheskieltame/claudelance-types";
 import type { Address, Hash } from "viem";
@@ -71,6 +73,7 @@ type BountyJson = {
   instructionUrl: string;
   claimers: string[];
   submissions: Submission[];
+  bountyType: number;
 };
 
 export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
@@ -179,9 +182,9 @@ export function BountyDetailClient({ bounty }: { bounty: BountyJson }) {
         <PickWinnerCard bountyId={bounty.id} submissions={bounty.submissions} />
       )}
 
-      {/* Claimer: submit PR */}
+      {/* Claimer: submit Deliverable */}
       {isClaimer && isOpen && !hasSubmission && (
-        <SubmitPRCard bountyId={bounty.id} />
+        <SubmitDeliverableCard bountyId={bounty.id} bountyType={bounty.bountyType} />
       )}
 
       {/* Worker: claim slot — open bounties, or direct hires only for the targeted worker */}
@@ -359,30 +362,42 @@ function PickWinnerCard({
   );
 }
 
-function SubmitPRCard({ bountyId }: { bountyId: string }) {
+function SubmitDeliverableCard({ bountyId, bountyType }: { bountyId: string, bountyType: number }) {
   const chainId = useChainId();
   const { writeContractAsync, isPending } = useWriteContract();
   const [txHash, setTxHash] = React.useState<Hash | null>(null);
   useTransactionToast(txHash, {
-    pendingMessage: "Submitting PR",
-    confirmedMessage: "PR submitted",
+    pendingMessage: "Submitting deliverable",
+    confirmedMessage: "Deliverable submitted",
     failedMessage: "Submit failed",
   });
 
-  const [prUrl, setPrUrl] = React.useState("");
-  const [commitSha, setCommitSha] = React.useState("");
-  const core = deploymentByChainId(chainId || DEFAULT_CHAIN_ID)!.core as Address;
+  const [deliverableUrl, setDeliverableUrl] = React.useState("");
+  const [deliverableHash, setDeliverableHash] = React.useState("");
+  const core = MAINNET_V3.core as Address;
 
-  const canSubmit = prUrl.startsWith("https://github.com/") && /^[0-9a-fA-F]{40}$/.test(commitSha);
+  const canSubmit = deliverableUrl.length > 0 && /^[0-9a-fA-F]{40,64}$/.test(deliverableHash);
+
+  const getHint = () => {
+    if (bountyType === 0) return "GitHub PR for code";
+    if (bountyType === 2 || bountyType === 1) return "IPFS/Gist for research/data";
+    return "Link to your completed work";
+  };
+
+  const getUrlPlaceholder = () => {
+    if (bountyType === 0) return "https://github.com/owner/repo/pull/123";
+    return "https://...";
+  };
 
   const submit = async () => {
     try {
-      const padded = `0x${commitSha.toLowerCase()}000000000000000000000000` as Hash;
+      const padded = deliverableHash.toLowerCase().padEnd(64, '0');
+      const formattedHash = `0x${padded.slice(0, 64)}` as Hash;
       const hash = (await writeContractAsync({
         address: core,
-        abi: CLAUDELANCE_CORE_ABI,
-        functionName: "submitPR",
-        args: [BigInt(bountyId), prUrl, padded, ""],
+        abi: CLAUDELANCE_CORE_V3_ABI,
+        functionName: "submitDeliverable",
+        args: [BigInt(bountyId), deliverableUrl, formattedHash, ""],
         feeCurrency: miniPayFeeCurrency(),
       })) as Hash;
       setTxHash(hash);
@@ -398,27 +413,32 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
           <Upload className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold">Submit your PR</h3>
+          <h3 className="font-semibold">Submit your Deliverable</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            You&apos;ve claimed this bounty. Submit your pull request URL and
-            commit hash (40 hex chars) to complete your entry.
+            You&apos;ve claimed this bounty. Submit your deliverable URL and
+            content hash to complete your entry.
           </p>
           <div className="mt-4 space-y-3">
-            <input
-              type="url"
-              placeholder="https://github.com/yeheskieltame/claudelance/pull/123"
-              value={prUrl}
-              onChange={(e) => setPrUrl(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <input
-              type="text"
-              placeholder="Commit SHA (40 hex chars)"
-              value={commitSha}
-              onChange={(e) => setCommitSha(e.target.value.replace(/^0x/, "").trim())}
-              maxLength={40}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Deliverable URL ({getHint()})</label>
+              <input
+                type="url"
+                placeholder={getUrlPlaceholder()}
+                value={deliverableUrl}
+                onChange={(e) => setDeliverableUrl(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Content Hash (bytes32)</label>
+              <input
+                type="text"
+                placeholder="Content Hash (hex)"
+                value={deliverableHash}
+                onChange={(e) => setDeliverableHash(e.target.value.replace(/^0x/, "").trim())}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
             <Button size="sm" onClick={submit} disabled={!canSubmit || isPending}>
               {isPending ? (
                 <>
@@ -426,7 +446,7 @@ function SubmitPRCard({ bountyId }: { bountyId: string }) {
                   Submitting
                 </>
               ) : (
-                "Submit PR"
+                "Submit Deliverable"
               )}
             </Button>
           </div>
