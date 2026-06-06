@@ -231,6 +231,26 @@ export class ClaudelanceClient {
    *
    * Supported networks: `'sepolia'` (Celo Sepolia) and `'celo'` (Celo Mainnet).
    */
+  /**
+   * Build a read-only client from an RPC URL + network key.
+   * No private key required — only read methods are available.
+   * Write methods throw `[ClaudelanceClient] Write methods require a wallet client`.
+   */
+  static fromRpcUrl(opts: { rpcUrl?: string; network: NetworkKey }): ClaudelanceClient {
+    const deployment: Deployment = opts.network === 'celo' ? MAINNET : SEPOLIA;
+    const chain = chainForNetwork(opts.network);
+    const transport = http(opts.rpcUrl);
+    const publicClient = createPublicClient({ chain, transport });
+
+    return new ClaudelanceClient({
+      publicClient,
+      core: deployment.core,
+      tokens: deployment.tokens,
+      identityRegistry: deployment.identityRegistry,
+      reputationRegistry: deployment.reputationRegistry,
+    });
+  }
+
   static fromMnemonic(opts: FromMnemonicOptions): ClaudelanceClient {
     const deployment: Deployment = opts.network === 'celo' ? MAINNET : SEPOLIA;
     const chain = chainForNetwork(opts.network);
@@ -257,7 +277,7 @@ export class ClaudelanceClient {
   async getBounty(bountyId: bigint): Promise<Bounty> {
     return (await this.publicClient.readContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'getBounty',
       args: [bountyId],
     })) as Bounty;
@@ -265,12 +285,13 @@ export class ClaudelanceClient {
 
   /**
    * A worker's submission for a bounty, including the relayer's CI verdict.
-   * `submittedAt === 0n` means the worker has not submitted a PR.
+   * v3: fields are `deliverableUrl` + `deliverableHash` (not prUrl/commitHash).
+   * `submittedAt === 0n` means the worker has not submitted yet.
    */
   async getSubmission(bountyId: bigint, worker: Address): Promise<Submission> {
     return (await this.publicClient.readContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'getSubmission',
       args: [bountyId, worker],
     })) as Submission;
@@ -299,39 +320,51 @@ export class ClaudelanceClient {
     return bounty;
   }
 
+  /**
+   * Total bounty count. On v2, reads the `bountyCount` public getter.
+   * On v3 (EIP-7201 storage, no public getter), falls back to `getBountyCountV3`.
+   *
+   * For new code targeting v3, prefer `getBountyCountV3()` directly.
+   */
   async getBountyCount(): Promise<bigint> {
-    return (await this.publicClient.readContract({
-      address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
-      functionName: 'bountyCount',
-    })) as bigint;
+    try {
+      return (await this.publicClient.readContract({
+        address: this.core,
+        abi: CLAUDELANCE_CORE_ABI,
+        functionName: 'bountyCount',
+      })) as bigint;
+    } catch {
+      return this.getBountyCountV3();
+    }
   }
 
   /**
-   * Return every currently-open bounty. Linear scan via multicall — fine for
-   * the hackathon scope (hundreds at most).
+   * Return every currently-open bounty via multicall.
+   * Uses `getBountyCountV3` for scan range on v3 (binary search, O(log n)).
    */
   async listOpenBounties(): Promise<Array<Bounty & { id: bigint }>> {
-    const count = await this.getBountyCount();
+    const count = await this.getBountyCountV3();
     if (count === 0n) return [];
 
     const calls = [];
     for (let i = 1n; i <= count; i++) {
       calls.push({
         address: this.core,
-        abi: CLAUDELANCE_CORE_ABI,
+        abi: CLAUDELANCE_CORE_V3_ABI,
         functionName: 'getBounty' as const,
         args: [i] as const,
       });
     }
     const results = await this.publicClient.multicall({
       contracts: calls,
-      allowFailure: false,
+      allowFailure: true,
     });
 
     const out: Array<Bounty & { id: bigint }> = [];
     for (let idx = 0; idx < results.length; idx++) {
-      const b = results[idx] as Bounty;
+      const r = results[idx];
+      if (!r || r.status === 'failure') continue;
+      const b = r.result as Bounty;
       if (b.status === 0) out.push({ ...b, id: BigInt(idx + 1) });
     }
     return out;
@@ -381,24 +414,40 @@ export class ClaudelanceClient {
     const [volume, revenue, resolved, posters, workers] =
       (await this.publicClient.readContract({
         address: this.core,
-        abi: CLAUDELANCE_CORE_ABI,
+        abi: CLAUDELANCE_CORE_V3_ABI,
         functionName: 'getStats',
         args: [token],
       })) as readonly [bigint, bigint, bigint, bigint, bigint];
     return { volume, revenue, resolved, posters, workers };
   }
 
-  /** Pending earnings for an address in a specific token. */
+  /**
+   * Pending earnings for an address in a specific token.
+   *
+   * v2 only: reads the `earnings(address, token)` public mapping getter.
+   * On v3 this getter does not exist (EIP-7201 storage). For v3, earnings
+   * are opaque until `withdrawEarnings` is called — use `EarningsWithdrawn`
+   * event logs via `listProtocolRevenueEvents` or `watchEarningsWithdrawn`
+   * to audit past withdrawals.
+   */
   async getEarnings(account: Address, token: Address): Promise<bigint> {
-    return (await this.publicClient.readContract({
-      address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
-      functionName: 'earnings',
-      args: [account, token],
-    })) as bigint;
+    try {
+      return (await this.publicClient.readContract({
+        address: this.core,
+        abi: CLAUDELANCE_CORE_ABI,
+        functionName: 'earnings',
+        args: [account, token],
+      })) as bigint;
+    } catch {
+      // v3 does not expose the earnings mapping as a public getter.
+      return 0n;
+    }
   }
 
-  /** Pending earnings for the wallet account in a specific token. */
+  /**
+   * Pending earnings for the connected wallet in a specific token.
+   * Returns 0 on v3 (earnings not readable — see `getEarnings` for details).
+   */
   async getMyEarnings(token: Address): Promise<bigint> {
     return this.getEarnings(this.requireAccount(), token);
   }
@@ -507,7 +556,7 @@ export class ClaudelanceClient {
    * Use this at the top of any worker session before `claimSlot` so the
    * on-chain `NoAgentIdentity` guard is guaranteed to pass.
    */
-  async ensureIdentity(): Promise<{ tokenId: bigint; minted: boolean }> {
+  async ensureIdentity(): Promise<{ tokenId: bigint; minted: boolean; tx?: `0x${string}` }> {
     const wallet = this.requireWalletClient();
     const who = wallet.account.address;
 
@@ -522,15 +571,20 @@ export class ClaudelanceClient {
       account: wallet.account,
     });
 
-    const hash = await wallet.writeContract(request);
-    await this.publicClient.waitForTransactionReceipt({ hash });
+    const tx = await wallet.writeContract(request);
+    await this.publicClient.waitForTransactionReceipt({ hash: tx });
 
-    return { tokenId: result as bigint, minted: true };
+    return { tokenId: result as bigint, minted: true, tx };
   }
 
   /**
-   * Eligibility check before claiming. Mirrors on-chain guards so agents
-   * don't waste gas on a guaranteed-revert claim.
+   * Eligibility check before claiming. Mirrors the v3 on-chain guards so
+   * agents don't waste gas on a guaranteed-revert `claimSlot` call.
+   *
+   * Note: the `hasClaimed(bountyId, worker)` mapping getter exists on v2 but
+   * is not a public getter on v3 (EIP-7201 namespaced storage). To check if
+   * the wallet already claimed on v3, call `getClaimers(bountyId)` and search
+   * the result — or just attempt `claimSlot` and catch `AlreadyClaimedError`.
    */
   async canClaim(bountyId: bigint, account?: Address): Promise<boolean> {
     const who = account ?? this.requireAccount();
@@ -543,13 +597,24 @@ export class ClaudelanceClient {
     }
     if (!(await this.hasAgentIdentity(who))) return false;
 
-    const claimed = (await this.publicClient.readContract({
-      address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
-      functionName: 'hasClaimed',
-      args: [bountyId, who],
-    })) as boolean;
-    return !claimed;
+    // On v3: check the claimers list. On v2: try the hasClaimed getter.
+    try {
+      const claimers = await this.getClaimers(bountyId);
+      return !claimers.some((c) => c.toLowerCase() === who.toLowerCase());
+    } catch {
+      // v2 fallback: hasClaimed public getter
+      try {
+        const claimed = (await this.publicClient.readContract({
+          address: this.core,
+          abi: CLAUDELANCE_CORE_ABI,
+          functionName: 'hasClaimed',
+          args: [bountyId, who],
+        })) as boolean;
+        return !claimed;
+      } catch {
+        return true; // cannot determine — optimistically allow
+      }
+    }
   }
 
   // ─── Worker write API ────────────────────────────────────────────────
@@ -558,7 +623,7 @@ export class ClaudelanceClient {
     const wallet = this.requireWalletClient();
     return wallet.writeContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'claimSlot',
       args: [bountyId],
       account: wallet.account,
@@ -615,7 +680,7 @@ export class ClaudelanceClient {
     const wallet = this.requireWalletClient();
     return wallet.writeContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'settleStake',
       args: [bountyId, worker ?? wallet.account.address],
       account: wallet.account,
@@ -628,7 +693,7 @@ export class ClaudelanceClient {
     const wallet = this.requireWalletClient();
     return wallet.writeContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'withdrawEarnings',
       args: [token],
       account: wallet.account,
@@ -773,9 +838,7 @@ export class ClaudelanceClient {
 
     emit({ stage: "ensure-identity" });
     const identityRes = await this.ensureIdentity();
-    const identityTx = identityRes.minted
-      ? (`0x${identityRes.tokenId.toString(16)}` as `0x${string}`)
-      : null;
+    const identityTx = identityRes.minted ? (identityRes.tx ?? null) : null;
 
     let claimTx: `0x${string}` | null = null;
     try {
@@ -812,7 +875,7 @@ export class ClaudelanceClient {
     const wallet = this.requireWalletClient();
     return wallet.writeContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'postBounty',
       args: [
         opts.token,
@@ -854,7 +917,7 @@ export class ClaudelanceClient {
     const wallet = this.requireWalletClient();
     return wallet.writeContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'postDirectHire',
       args: [
         opts.token,
@@ -894,7 +957,7 @@ export class ClaudelanceClient {
     const wallet = this.requireWalletClient();
     return wallet.writeContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'pickWinner',
       args: [bountyId, winner],
       account: wallet.account,
@@ -929,7 +992,7 @@ export class ClaudelanceClient {
     const wallet = this.requireWalletClient();
     return wallet.writeContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'cancelExpired',
       args: [bountyId],
       account: wallet.account,
@@ -948,7 +1011,7 @@ export class ClaudelanceClient {
     const wallet = this.requireWalletClient();
     return wallet.writeContract({
       address: this.core,
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       functionName: 'attestCI',
       args: [bountyId, worker, passed],
       account: wallet.account,
@@ -1072,11 +1135,13 @@ export class ClaudelanceClient {
       args: [owner, this.core],
     })) as bigint;
     if (allowance >= needed) return;
+    // Approve 10× the immediate need so repeated bounty claims/posts don't each
+    // require a separate approve transaction.
     const hash = await wallet.writeContract({
       address: token,
       abi: CUSD_ABI,
       functionName: 'approve',
-      args: [this.core, needed],
+      args: [this.core, needed * 10n],
       account: wallet.account,
       chain: wallet.chain,
     });
@@ -1090,7 +1155,7 @@ export class ClaudelanceClient {
   protected async bountyIdFromReceipt(hash: `0x${string}`): Promise<bigint> {
     const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     const events = parseEventLogs({
-      abi: CLAUDELANCE_CORE_ABI,
+      abi: CLAUDELANCE_CORE_V3_ABI,
       eventName: 'BountyPosted',
       logs: receipt.logs,
     });
