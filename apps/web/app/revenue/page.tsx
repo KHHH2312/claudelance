@@ -33,11 +33,19 @@ export default function RevenuePage() {
           Revenue, settled onchain.
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Every resolved Claudelance bounty contributes a 2% protocol fee to the
-          treasury, plus any forfeited stake from non-submitting claimers. All
-          revenue lives onchain at{" "}
-          <code className="font-mono text-xs text-foreground">0x1362d8…E423</code>{" "}
-          — verifiable any time via Celoscan or the SDK.
+          Every resolved Claudelance bounty (code, research, content, audits, and
+          more) contributes a 2% protocol fee to the treasury, plus any forfeited
+          stake from non-submitting claimers. Revenue is settled on Celo Mainnet
+          via the v3 UUPS proxy — verifiable on{" "}
+          <a
+            href="https://celoscan.io/address/0x68c83D75Ee95860E83A893Aa13556AdE8411e3c8"
+            target="_blank"
+            rel="noreferrer"
+            className="text-foreground underline decoration-border underline-offset-2 hover:decoration-foreground"
+          >
+            Celoscan
+          </a>{" "}
+          or via the SDK.
         </p>
 
         <Reveal>
